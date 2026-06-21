@@ -1,6 +1,7 @@
 package com.wishlist.nathan.application.usecase;
 
 import com.wishlist.nathan.application.excecao.RecursoNaoEncontradoException;
+import com.wishlist.nathan.application.port.ConvidadoRepositorioPort;
 import com.wishlist.nathan.application.port.ItemPresenteRepositorioPort;
 import com.wishlist.nathan.application.port.RegistroAcessoPort;
 import com.wishlist.nathan.application.port.ReservaPresenteRepositorioPort;
@@ -25,12 +26,14 @@ public class EscolherPresente {
     private final ItemPresenteRepositorioPort itens;
     private final ReservaPresenteRepositorioPort reservas;
     private final RegistroAcessoPort acessos;
+    private final ConvidadoRepositorioPort convidados;
 
     public EscolherPresente(ItemPresenteRepositorioPort itens, ReservaPresenteRepositorioPort reservas,
-                            RegistroAcessoPort acessos) {
+                            RegistroAcessoPort acessos, ConvidadoRepositorioPort convidados) {
         this.itens = itens;
         this.reservas = reservas;
         this.acessos = acessos;
+        this.convidados = convidados;
     }
 
     @Transactional
@@ -42,6 +45,12 @@ public class EscolherPresente {
         if (porChave.isPresent()) {
             return Resultado.de(porChave.get(), false);
         }
+
+        // Sessão antiga apontando para convidado removido/recriado: falha limpa (re-login)
+        // em vez de violar a FK gift_claim -> guest com um 500.
+        convidados.buscarPorId(cmd.convidadoId())
+                .filter(c -> c.getEventoId().equals(cmd.eventoId()))
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Sua sessão expirou. Entre novamente."));
 
         // 2) Lock de linha no item (serializa cliques concorrentes).
         ItemPresente item = itens.buscarPorIdComLock(cmd.itemId())

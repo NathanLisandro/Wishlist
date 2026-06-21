@@ -3,6 +3,7 @@ package com.wishlist.nathan.application.usecase;
 import com.wishlist.nathan.application.excecao.ConflitoException;
 import com.wishlist.nathan.application.excecao.RecursoNaoEncontradoException;
 import com.wishlist.nathan.application.port.ConfigMercadoPagoRepositorioPort;
+import com.wishlist.nathan.application.port.ConvidadoRepositorioPort;
 import com.wishlist.nathan.application.port.CriptografiaPort;
 import com.wishlist.nathan.application.port.EventoRepositorioPort;
 import com.wishlist.nathan.application.port.MoneyGiftRepositorioPort;
@@ -28,6 +29,7 @@ import java.util.UUID;
 public class CriarPresenteDinheiro {
 
     private final EventoRepositorioPort eventos;
+    private final ConvidadoRepositorioPort convidados;
     private final ConfigMercadoPagoRepositorioPort configs;
     private final MoneyGiftRepositorioPort moneyGifts;
     private final PagamentoGateway gateway;
@@ -35,10 +37,12 @@ public class CriarPresenteDinheiro {
     private final RegistroAcessoPort acessos;
     private final AppProperties props;
 
-    public CriarPresenteDinheiro(EventoRepositorioPort eventos, ConfigMercadoPagoRepositorioPort configs,
-                                 MoneyGiftRepositorioPort moneyGifts, PagamentoGateway gateway,
-                                 CriptografiaPort cripto, RegistroAcessoPort acessos, AppProperties props) {
+    public CriarPresenteDinheiro(EventoRepositorioPort eventos, ConvidadoRepositorioPort convidados,
+                                 ConfigMercadoPagoRepositorioPort configs, MoneyGiftRepositorioPort moneyGifts,
+                                 PagamentoGateway gateway, CriptografiaPort cripto,
+                                 RegistroAcessoPort acessos, AppProperties props) {
         this.eventos = eventos;
+        this.convidados = convidados;
         this.configs = configs;
         this.moneyGifts = moneyGifts;
         this.gateway = gateway;
@@ -54,6 +58,11 @@ public class CriarPresenteDinheiro {
         if (!evento.isPresenteDinheiroHabilitado()) {
             throw new ConflitoException("Presente em dinheiro desabilitado neste evento");
         }
+        // Sessão antiga apontando para convidado removido/recriado: falha limpa (re-login)
+        // em vez de violar a FK money_gift -> guest com um 500.
+        convidados.buscarPorId(cmd.convidadoId())
+                .filter(c -> c.getEventoId().equals(cmd.eventoId()))
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Sua sessão expirou. Entre novamente."));
         ConfigMercadoPago config = configs.buscarPorConta(evento.getContaId())
                 .orElseThrow(() -> new ConflitoException("Mercado Pago não configurado para esta conta"));
 
