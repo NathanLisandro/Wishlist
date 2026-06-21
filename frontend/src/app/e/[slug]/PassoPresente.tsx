@@ -6,6 +6,7 @@ import {
   ArrowLeft, Banknote, Gift, Heart, ExternalLink, X, Check, Plus, ListChecks, CheckCircle2,
 } from "lucide-react";
 import { api, ApiError, ehSessaoInvalida, mediaUrl } from "@/lib/api";
+import { formatarMoeda, moedaParaNumero } from "@/lib/format";
 import type { ItemDisponivel, MoneyGiftResultado, ReservaResultado } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -95,7 +96,7 @@ export function PassoPresente({
   }
 
   async function darDinheiro() {
-    const numero = Number(valor.replace(",", "."));
+    const numero = moedaParaNumero(valor);
     if (!numero || numero <= 0) {
       toast.error("Informe um valor válido.");
       return;
@@ -346,15 +347,20 @@ export function PassoPresente({
             </div>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="valor">Valor (R$)</Label>
-            <Input
-              id="valor"
-              inputMode="decimal"
-              className="h-12 text-base"
-              placeholder="100,00"
-              value={valor}
-              onChange={(e) => setValor(e.target.value)}
-            />
+            <Label htmlFor="valor">Valor</Label>
+            <div className="flex items-stretch overflow-hidden rounded-lg border border-input bg-white focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/30">
+              <span className="grid place-items-center border-r border-input bg-emerald-50 px-3 text-base font-medium text-emerald-700">
+                R$
+              </span>
+              <input
+                id="valor"
+                inputMode="numeric"
+                className="h-12 flex-1 bg-transparent px-3 text-base outline-none"
+                placeholder="0,00"
+                value={valor}
+                onChange={(e) => setValor(formatarMoeda(e.target.value))}
+              />
+            </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="msg">Recado ao casal (opcional)</Label>

@@ -21,6 +21,27 @@ export function apenasDigitos(valor: string): string {
 }
 
 /**
+ * Máscara de moeda pt-BR enquanto digita: os dígitos são tratados como centavos.
+ *   "10000"   -> "100,00"
+ *   "1234567" -> "12.345,67"
+ */
+export function formatarMoeda(valor: string): string {
+  const digitos = valor.replace(/\D/g, "").slice(0, 11);
+  if (!digitos) return "";
+  const numero = Number(digitos) / 100;
+  return numero.toLocaleString("pt-BR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+/** Converte o texto mascarado em número (reais). "12.345,67" -> 12345.67 */
+export function moedaParaNumero(valor: string): number {
+  const digitos = valor.replace(/\D/g, "");
+  return digitos ? Number(digitos) / 100 : 0;
+}
+
+/**
  * Formata para exibição um telefone vindo da API (E.164, ex.: "+5567998437332").
  * Mostra como "(67) 99843-7332" quando é brasileiro; senão devolve como veio.
  */
