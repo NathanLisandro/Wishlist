@@ -9,6 +9,8 @@ import com.wishlist.nathan.application.port.WebhookEventRepositorioPort;
 import com.wishlist.nathan.domain.conta.ConfigMercadoPago;
 import com.wishlist.nathan.domain.pagamento.PresenteDinheiro;
 import com.wishlist.nathan.domain.pagamento.StatusPresenteDinheiro;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +23,8 @@ import java.util.UUID;
  */
 @Service
 public class ProcessarWebhookPagamento {
+
+    private static final Logger log = LoggerFactory.getLogger(ProcessarWebhookPagamento.class);
 
     private final ConfigMercadoPagoRepositorioPort configs;
     private final MoneyGiftRepositorioPort moneyGifts;
@@ -42,12 +46,13 @@ public class ProcessarWebhookPagamento {
     public void executar(Comando cmd) {
         // 1) Dedup de notificações repetidas.
         if (cmd.mpEventId() != null && webhookEvents.existePorMpEventId(cmd.mpEventId())) {
+            log.info("Webhook {} já processado (dedup) — ignorando", cmd.mpEventId());
             return; // no-op
         }
 
         ConfigMercadoPago config = configs.buscarPorConta(cmd.contaId()).orElse(null);
         if (config == null) {
-            // sem config não há como validar/consultar — apenas registra para auditoria
+            log.warn("Webhook: conta {} sem config Mercado Pago — accountId errado na URL?", cmd.contaId());
             webhookEvents.registrar(cmd.mpEventId(), null, cmd.payloadBruto());
             return;
         }
@@ -62,19 +67,27 @@ public class ProcessarWebhookPagamento {
 
         // 3) Só tratamos notificações de pagamento.
         if (!"payment".equalsIgnoreCase(cmd.tipo()) || cmd.dataId() == null) {
+            log.info("Webhook ignorado (não é payment): type={} dataId={}", cmd.tipo(), cmd.dataId());
             webhookEvents.registrar(cmd.mpEventId(), null, cmd.payloadBruto());
             return;
         }
 
         String token = cripto.descriptografar(config.getAccessToken().conteudo());
         var pago = gateway.consultarPagamento(token, cmd.dataId());
+        StatusPresenteDinheiro status = mapearStatus(pago.status());
+        log.info("Pagamento {} consultado: statusMP={} -> {} (extRef={})",
+                pago.paymentId(), pago.status(), status, pago.externalReference());
 
         UUID moneyGiftId = null;
         Optional<PresenteDinheiro> alvo = localizar(pago.externalReference(), pago.paymentId());
         if (alvo.isPresent()) {
             PresenteDinheiro presente = alvo.get();
-            presente.aplicarPagamento(pago.paymentId(), mapearStatus(pago.status()));
+            presente.aplicarPagamento(pago.paymentId(), status);
             moneyGiftId = moneyGifts.salvar(presente).getId();
+            log.info("Money gift {} atualizado para {}", moneyGiftId, status);
+        } else {
+            log.warn("Pagamento {} sem money_gift correspondente (extRef={}) — nada atualizado",
+                    pago.paymentId(), pago.externalReference());
         }
 
         webhookEvents.registrar(cmd.mpEventId(), moneyGiftId, cmd.payloadBruto());

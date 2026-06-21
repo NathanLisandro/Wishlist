@@ -2,6 +2,8 @@ package com.wishlist.nathan.presentation;
 
 import com.wishlist.nathan.application.usecase.ProcessarWebhookPagamento;
 import tools.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -18,6 +20,8 @@ import java.util.UUID;
  */
 @RestController
 public class WebhookController {
+
+    private static final Logger log = LoggerFactory.getLogger(WebhookController.class);
 
     private final ProcessarWebhookPagamento processar;
     private final ObjectMapper objectMapper;
@@ -56,6 +60,8 @@ public class WebhookController {
             }
         }
 
+        log.info("Webhook MP recebido: accountId={} type={} dataId={} eventId={}",
+                accountId, tipo, dataId, eventId);
         processar.executar(new ProcessarWebhookPagamento.Comando(
                 accountId, tipo, dataId, eventId, xSignature, xRequestId, body));
         return ResponseEntity.ok().build();
