@@ -1,0 +1,85 @@
+spring:
+  application:
+    name: lista-presentes
+  profiles:
+    # Perfil padrão para desenvolvimento local (ver application-local.yml docker-compose).
+    active: local
+
+  datasource:
+    # Em local o docker-compose/.env definem estas variáveis.
+    # Em prod (Railway) mapeie a partir de DATABASE_URL para o formato jdbc:postgresql://...
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/lista_presentes}
+    username: ${SPRING_DATASOURCE_USERNAME:lista}
+    password: ${SPRING_DATASOURCE_PASSWORD:lista}
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      # Flyway é o dono do schema. 'none' (não 'validate') porque usamos tipos
+      # específicos do Postgres (citext, enums nomeados) que o validador do
+      # Hibernate não reconhece como compatíveis.
+      ddl-auto: none
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: false
+
+  servlet:
+    multipart:
+      # Limites do upload de foto do casal.
+      max-file-size: 8MB
+      max-request-size: 10MB
+
+# Segredos da aplicação (cripto/HMAC/MP) — sempre via env, nunca commitados.
+app:
+  security:
+    pii-encryption-key: ${PII_ENCRYPTION_KEY:}
+    phone-hmac-key: ${PHONE_HMAC_KEY:}
+    jwt-secret: ${JWT_SECRET:}
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
+  mercado-pago:
+    webhook-base-url: ${MP_WEBHOOK_BASE_URL:}
+  storage:
+    # Diretório físico das fotos (em Docker, monte um volume aqui) e o prefixo da
+    # URL pública servida estaticamente. O caminho gravado no banco é relativo.
+    dir: ${STORAGE_DIR:./uploads}
+    public-base: ${STORAGE_PUBLIC_BASE:/media}
+
+server:
+  port: ${PORT:8080}
+
+---
+spring:
+  config:
+    activate:
+      on-profile: local
+logging:
+  level:
+    root: INFO
+    com.wishlist.nathan: DEBUG
+    org.flywaydb: INFO
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+  jpa:
+    properties:
+      hibernate:
+        format_sql: false
+logging:
+  # Logging estruturado nativo do Spring Boot — JSON (ECS) no stdout,
+  # ideal para visualização (Dozzle/Railway) e ingestão tipo Splunk. Sem PII.
+  structured:
+    format:
+      console: ecs
+  level:
+    root: INFO
+    com.wishlist.nathan: INFO

@@ -1,0 +1,86 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '4.1.0'
+	id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.wishlist'
+version = '0.0.1-SNAPSHOT'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(25)
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+ext {
+	// Versões de libs fora do BOM do Spring Boot
+	poiVersion = '5.3.0'
+	commonsCsvVersion = '1.11.0'
+	mercadoPagoVersion = '3.2.1'
+	jjwtVersion = '0.13.0'
+	bucket4jVersion = '8.19.0'
+	testcontainersVersion = '2.0.5'
+}
+
+dependencyManagement {
+	imports {
+		// BOM do Testcontainers (não é gerenciado pelo BOM do Spring Boot 4).
+		mavenBom "org.testcontainers:testcontainers-bom:${testcontainersVersion}"
+	}
+}
+
+dependencies {
+	// Web + Segurança
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+
+	// Persistência + Validação + Migrations
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	// Boot 4 modularizou as autoconfigurações: o módulo spring-boot-flyway
+	// ativa a integração do Flyway (não basta ter o flyway-core no classpath).
+	implementation 'org.springframework.boot:spring-boot-flyway'
+	implementation 'org.flywaydb:flyway-core'
+	implementation 'org.flywaydb:flyway-database-postgresql'
+
+	// Importação de arquivos (CSV / XLSX)
+	implementation "org.apache.poi:poi-ooxml:${poiVersion}"
+	implementation "org.apache.commons:commons-csv:${commonsCsvVersion}"
+
+	// Pagamentos — Mercado Pago (usado em fase posterior)
+	implementation "com.mercadopago:sdk-java:${mercadoPagoVersion}"
+
+	// JWT (sessão admin/convidado)
+	implementation "io.jsonwebtoken:jjwt-api:${jjwtVersion}"
+	runtimeOnly "io.jsonwebtoken:jjwt-impl:${jjwtVersion}"
+	runtimeOnly "io.jsonwebtoken:jjwt-jackson:${jjwtVersion}"
+
+	// Rate limiting (login e guest-session)
+	implementation "com.bucket4j:bucket4j_jdk17-core:${bucket4jVersion}"
+
+	// Lombok + ferramentas de dev
+	compileOnly 'org.projectlombok:lombok'
+	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+	runtimeOnly 'org.postgresql:postgresql'
+	annotationProcessor 'org.projectlombok:lombok'
+
+	// Testes
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testImplementation 'org.springframework.boot:spring-boot-starter-security-test'
+	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+	testImplementation 'org.springframework.boot:spring-boot-testcontainers'
+	testImplementation 'org.testcontainers:testcontainers-junit-jupiter'
+	testImplementation 'org.testcontainers:testcontainers-postgresql'
+	testCompileOnly 'org.projectlombok:lombok'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	testAnnotationProcessor 'org.projectlombok:lombok'
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}

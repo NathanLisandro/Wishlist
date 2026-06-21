@@ -1,0 +1,54 @@
+# Ambiente local — Postgres + visualizador de logs (Dozzle) + backend.
+# Uso:  docker compose up -d        (sobe banco e dozzle)
+#       docker compose up -d backend (sobe também a aplicação)
+# Variáveis vêm do arquivo .env (copie de .env.example).
+
+services:
+  db:
+    image: postgres:16
+    container_name: lp_db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-lista_presentes}
+      POSTGRES_USER: ${POSTGRES_USER:-lista}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-lista}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-lista} -d ${POSTGRES_DB:-lista_presentes}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Visualizador leve de logs dos containers no browser (http://localhost:9999).
+  dozzle:
+    image: amir20/dozzle:latest
+    container_name: lp_dozzle
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    ports:
+      - "9999:8080"
+
+  backend:
+    build: .
+    container_name: lp_backend
+    profiles: ["app"]           # só sobe com:  docker compose --profile app up -d
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-lista_presentes}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-lista}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-lista}
+      PII_ENCRYPTION_KEY: ${PII_ENCRYPTION_KEY}
+      PHONE_HMAC_KEY: ${PHONE_HMAC_KEY}
+      JWT_SECRET: ${JWT_SECRET}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000}
+      MP_WEBHOOK_BASE_URL: ${MP_WEBHOOK_BASE_URL:-}
+    ports:
+      - "8080:8080"
+
+volumes:
+  pgdata:

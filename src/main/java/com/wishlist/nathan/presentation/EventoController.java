@@ -1,0 +1,264 @@
+package com.wishlist.nathan.presentation;
+
+import com.wishlist.nathan.application.dto.SessaoAdmin;
+import com.wishlist.nathan.application.usecase.AdicionarConvidado;
+import com.wishlist.nathan.application.usecase.AdicionarPresente;
+import com.wishlist.nathan.application.usecase.AtualizarEvento;
+import com.wishlist.nathan.application.usecase.ConsultarEventoAdmin;
+import com.wishlist.nathan.application.usecase.CriarEvento;
+import com.wishlist.nathan.application.usecase.EditarConvidado;
+import com.wishlist.nathan.application.usecase.EditarPresente;
+import com.wishlist.nathan.application.usecase.ImportarConvidados;
+import com.wishlist.nathan.application.usecase.ImportarListaPresentes;
+import com.wishlist.nathan.application.usecase.ListarConvidados;
+import com.wishlist.nathan.application.usecase.ListarEventos;
+import com.wishlist.nathan.application.usecase.ListarPresentesAdmin;
+import com.wishlist.nathan.application.usecase.RemoverConvidado;
+import com.wishlist.nathan.application.usecase.RemoverPresente;
+import com.wishlist.nathan.application.usecase.RemoverTodosConvidados;
+import com.wishlist.nathan.application.usecase.SalvarFotoEvento;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+@RestController
+@RequestMapping("/events")
+public class EventoController {
+
+    private final CriarEvento criarEvento;
+    private final ConsultarEventoAdmin consultarEventoAdmin;
+    private final AtualizarEvento atualizarEvento;
+    private final SalvarFotoEvento salvarFotoEvento;
+    private final AdicionarPresente adicionarPresente;
+    private final EditarPresente editarPresente;
+    private final RemoverPresente removerPresente;
+    private final ListarPresentesAdmin listarPresentesAdmin;
+    private final AdicionarConvidado adicionarConvidado;
+    private final EditarConvidado editarConvidado;
+    private final RemoverConvidado removerConvidado;
+    private final RemoverTodosConvidados removerTodosConvidados;
+    private final ListarConvidados listarConvidados;
+    private final ImportarListaPresentes importarPresentes;
+    private final ImportarConvidados importarConvidados;
+    private final ListarEventos listarEventos;
+
+    public EventoController(CriarEvento criarEvento, ConsultarEventoAdmin consultarEventoAdmin,
+                           AtualizarEvento atualizarEvento, SalvarFotoEvento salvarFotoEvento,
+                           AdicionarPresente adicionarPresente, EditarPresente editarPresente,
+                           RemoverPresente removerPresente, ListarPresentesAdmin listarPresentesAdmin,
+                           AdicionarConvidado adicionarConvidado, EditarConvidado editarConvidado,
+                           RemoverConvidado removerConvidado, RemoverTodosConvidados removerTodosConvidados,
+                           ListarConvidados listarConvidados, ImportarListaPresentes importarPresentes,
+                           ImportarConvidados importarConvidados, ListarEventos listarEventos) {
+        this.criarEvento = criarEvento;
+        this.consultarEventoAdmin = consultarEventoAdmin;
+        this.atualizarEvento = atualizarEvento;
+        this.salvarFotoEvento = salvarFotoEvento;
+        this.adicionarPresente = adicionarPresente;
+        this.editarPresente = editarPresente;
+        this.removerPresente = removerPresente;
+        this.listarPresentesAdmin = listarPresentesAdmin;
+        this.adicionarConvidado = adicionarConvidado;
+        this.editarConvidado = editarConvidado;
+        this.removerConvidado = removerConvidado;
+        this.removerTodosConvidados = removerTodosConvidados;
+        this.listarConvidados = listarConvidados;
+        this.importarPresentes = importarPresentes;
+        this.importarConvidados = importarConvidados;
+        this.listarEventos = listarEventos;
+    }
+
+    @GetMapping
+    public List<ListarEventos.EventoResumo> listar(@AuthenticationPrincipal SessaoAdmin sessao) {
+        return listarEventos.executar(sessao.contaId());
+    }
+
+    @PostMapping
+    public ResponseEntity<Map<String, UUID>> criar(@AuthenticationPrincipal SessaoAdmin sessao,
+                                                   @Valid @RequestBody EventoRequest req) {
+        UUID id = criarEvento.executar(sessao.contaId(), new CriarEvento.Comando(
+                req.categoriaId(), req.slug(), req.nome(), req.descricao(), req.dataEvento(),
+                req.rsvpHabilitado(), req.prazoRsvp(), req.presenteDinheiroHabilitado()));
+        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("id", id));
+    }
+
+    @GetMapping("/{eventoId}")
+    public ConsultarEventoAdmin.Resultado detalhe(@AuthenticationPrincipal SessaoAdmin sessao,
+                                                  @PathVariable UUID eventoId) {
+        return consultarEventoAdmin.executar(sessao.contaId(), eventoId);
+    }
+
+    @PutMapping("/{eventoId}")
+    public ResponseEntity<Void> atualizar(@AuthenticationPrincipal SessaoAdmin sessao,
+                                          @PathVariable UUID eventoId,
+                                          @Valid @RequestBody AtualizarEventoRequest req) {
+        atualizarEvento.executar(sessao.contaId(), eventoId, new AtualizarEvento.Comando(
+                req.nome(), req.descricao(), req.dataEvento(), req.local(), req.mensagemCasal(),
+                req.mensagemFinal(), req.rsvpHabilitado(), req.prazoRsvp(), req.presenteDinheiroHabilitado()));
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{eventoId}/photo")
+    public Map<String, String> enviarFoto(@AuthenticationPrincipal SessaoAdmin sessao,
+                                          @PathVariable UUID eventoId,
+                                          @RequestParam("file") MultipartFile arquivo) {
+        String url = salvarFotoEvento.executar(sessao.contaId(), eventoId,
+                arquivo.getOriginalFilename(), arquivo.getContentType(), bytes(arquivo));
+        return Map.of("fotoUrl", url);
+    }
+
+    // ---- Presentes (gestão) ----
+
+    @GetMapping("/{eventoId}/gifts")
+    public List<ListarPresentesAdmin.ItemAdmin> listarPresentes(@AuthenticationPrincipal SessaoAdmin sessao,
+                                                                @PathVariable UUID eventoId) {
+        return listarPresentesAdmin.executar(sessao.contaId(), eventoId);
+    }
+
+    @PostMapping("/{eventoId}/gifts")
+    public ResponseEntity<Map<String, UUID>> adicionarPresente(@AuthenticationPrincipal SessaoAdmin sessao,
+                                                               @PathVariable UUID eventoId,
+                                                               @Valid @RequestBody PresenteRequest req) {
+        UUID id = adicionarPresente.executar(sessao.contaId(), eventoId, new AdicionarPresente.Comando(
+                req.nome(), req.variante(), req.quantidade(), req.linkProduto(), req.imagemUrl()));
+        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("id", id));
+    }
+
+    @PutMapping("/{eventoId}/gifts/{presenteId}")
+    public ResponseEntity<Void> editarPresente(@AuthenticationPrincipal SessaoAdmin sessao,
+                                               @PathVariable UUID eventoId, @PathVariable UUID presenteId,
+                                               @Valid @RequestBody PresenteRequest req) {
+        editarPresente.executar(sessao.contaId(), eventoId, presenteId, new EditarPresente.Comando(
+                req.nome(), req.variante(), req.quantidade(), req.linkProduto(), req.imagemUrl()));
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{eventoId}/gifts/{presenteId}")
+    public ResponseEntity<Void> removerPresente(@AuthenticationPrincipal SessaoAdmin sessao,
+                                                @PathVariable UUID eventoId, @PathVariable UUID presenteId) {
+        removerPresente.executar(sessao.contaId(), eventoId, presenteId);
+        return ResponseEntity.noContent().build();
+    }
+
+    // ---- Convidados ----
+
+    @GetMapping("/{eventoId}/guests")
+    public List<ListarConvidados.ConvidadoPainel> listarConvidados(@AuthenticationPrincipal SessaoAdmin sessao,
+                                                                   @PathVariable UUID eventoId) {
+        return listarConvidados.executar(sessao.contaId(), eventoId);
+    }
+
+    @PostMapping("/{eventoId}/guests")
+    public ResponseEntity<Map<String, UUID>> adicionarConvidado(@AuthenticationPrincipal SessaoAdmin sessao,
+                                                                @PathVariable UUID eventoId,
+                                                                @Valid @RequestBody ConvidadoRequest req) {
+        UUID id = adicionarConvidado.executar(sessao.contaId(), eventoId, new AdicionarConvidado.Comando(
+                req.nomeCompleto(), req.telefone(), req.acompanhantesPermitidos()));
+        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("id", id));
+    }
+
+    @PutMapping("/{eventoId}/guests/{convidadoId}")
+    public ResponseEntity<Void> editarConvidado(@AuthenticationPrincipal SessaoAdmin sessao,
+                                                @PathVariable UUID eventoId, @PathVariable UUID convidadoId,
+                                                @Valid @RequestBody ConvidadoRequest req) {
+        editarConvidado.executar(sessao.contaId(), eventoId, convidadoId, new EditarConvidado.Comando(
+                req.nomeCompleto(), req.telefone(), req.acompanhantesPermitidos()));
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{eventoId}/guests/{convidadoId}")
+    public ResponseEntity<Void> removerConvidado(@AuthenticationPrincipal SessaoAdmin sessao,
+                                                 @PathVariable UUID eventoId, @PathVariable UUID convidadoId) {
+        removerConvidado.executar(sessao.contaId(), eventoId, convidadoId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{eventoId}/guests")
+    public Map<String, Long> removerTodosConvidados(@AuthenticationPrincipal SessaoAdmin sessao,
+                                                    @PathVariable UUID eventoId) {
+        long removidos = removerTodosConvidados.executar(sessao.contaId(), eventoId);
+        return Map.of("removidos", removidos);
+    }
+
+    // ---- Importação CSV/XLSX ----
+
+    @GetMapping("/{eventoId}/gifts/template")
+    public ResponseEntity<byte[]> templatePresentes() {
+        return csv("modelo-presentes.csv", "nome,quantidade,variante,link,imagem_url\n"
+                + "Jogo de Panelas,1,inox,https://loja/produto,https://loja/img.jpg\n");
+    }
+
+    @GetMapping("/{eventoId}/guests/template")
+    public ResponseEntity<byte[]> templateConvidados() {
+        return csv("modelo-convidados.csv", "nome_completo,telefone,acompanhantes\n"
+                + "Carlos Silva,+5511999990000,2\n");
+    }
+
+    @PostMapping("/{eventoId}/gifts/import")
+    public ImportarListaPresentes.Resultado importarPresentes(@AuthenticationPrincipal SessaoAdmin sessao,
+                                                              @PathVariable UUID eventoId,
+                                                              @RequestParam("file") MultipartFile arquivo) {
+        return importarPresentes.executar(sessao.contaId(), eventoId, bytes(arquivo), arquivo.getOriginalFilename());
+    }
+
+    @PostMapping("/{eventoId}/guests/import")
+    public ImportarConvidados.Resultado importarConvidados(@AuthenticationPrincipal SessaoAdmin sessao,
+                                                           @PathVariable UUID eventoId,
+                                                           @RequestParam("file") MultipartFile arquivo) {
+        return importarConvidados.executar(sessao.contaId(), eventoId, bytes(arquivo), arquivo.getOriginalFilename());
+    }
+
+    private static byte[] bytes(MultipartFile arquivo) {
+        try {
+            return arquivo.getBytes();
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Falha ao ler o arquivo enviado");
+        }
+    }
+
+    private static ResponseEntity<byte[]> csv(String nome, String conteudo) {
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + nome + "\"")
+                .contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
+                .body(conteudo.getBytes(StandardCharsets.UTF_8));
+    }
+
+    public record EventoRequest(short categoriaId, @NotBlank String slug, @NotBlank String nome,
+                                String descricao, LocalDate dataEvento, boolean rsvpHabilitado,
+                                Instant prazoRsvp, boolean presenteDinheiroHabilitado) {}
+
+    public record AtualizarEventoRequest(@NotBlank String nome, String descricao, LocalDate dataEvento,
+                                         String local, String mensagemCasal, String mensagemFinal,
+                                         boolean rsvpHabilitado, Instant prazoRsvp,
+                                         boolean presenteDinheiroHabilitado) {}
+
+    public record PresenteRequest(@NotBlank String nome, String variante, @Positive int quantidade,
+                                  String linkProduto, String imagemUrl) {}
+
+    public record ConvidadoRequest(@NotBlank String nomeCompleto, @NotBlank String telefone,
+                                   @PositiveOrZero int acompanhantesPermitidos) {}
+}
