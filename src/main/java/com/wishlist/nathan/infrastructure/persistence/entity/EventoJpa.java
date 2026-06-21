@@ -68,6 +68,9 @@ public class EventoJpa {
     @Column(name = "closing_message")
     private String closingMessage;
 
+    @Column(name = "thank_you_message")
+    private String thankYouMessage;
+
     @Column(name = "created_at", insertable = false, updatable = false)
     private Instant createdAt;
 }

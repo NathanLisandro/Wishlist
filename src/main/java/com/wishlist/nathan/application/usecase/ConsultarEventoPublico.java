@@ -34,11 +34,11 @@ public class ConsultarEventoPublico {
                 evento.getDataEvento(), categoria, evento.isRsvpHabilitado(),
                 evento.isPresenteDinheiroHabilitado(), evento.getStatus().name(),
                 evento.getFotoUrl(), evento.getLocal(), evento.getMensagemCasal(),
-                evento.getMensagemFinal());
+                evento.getMensagemFinal(), evento.getMensagemAgradecimento());
     }
 
     public record Resultado(String slug, String nome, String descricao, LocalDate dataEvento,
                             String categoria, boolean rsvpHabilitado, boolean presenteDinheiroHabilitado,
                             String status, String fotoUrl, String local, String mensagemCasal,
-                            String mensagemFinal) {}
+                            String mensagemFinal, String mensagemAgradecimento) {}
 }

@@ -26,11 +26,12 @@ public class AtualizarEvento {
                 .filter(e -> e.getContaId().equals(contaId))
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Evento não encontrado"));
         evento.editar(cmd.nome(), cmd.descricao(), cmd.dataEvento(), cmd.local(), cmd.mensagemCasal(),
-                cmd.mensagemFinal(), cmd.rsvpHabilitado(), cmd.prazoRsvp(), cmd.presenteDinheiroHabilitado());
+                cmd.mensagemFinal(), cmd.mensagemAgradecimento(), cmd.rsvpHabilitado(), cmd.prazoRsvp(),
+                cmd.presenteDinheiroHabilitado());
         eventos.salvar(evento);
     }
 
     public record Comando(String nome, String descricao, LocalDate dataEvento, String local,
-                          String mensagemCasal, String mensagemFinal, boolean rsvpHabilitado,
-                          Instant prazoRsvp, boolean presenteDinheiroHabilitado) {}
+                          String mensagemCasal, String mensagemFinal, String mensagemAgradecimento,
+                          boolean rsvpHabilitado, Instant prazoRsvp, boolean presenteDinheiroHabilitado) {}
 }

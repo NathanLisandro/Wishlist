@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Check, LogOut } from "lucide-react";
+import { Check, LogOut, CalendarCheck, Gift, Heart } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
 import { formatarTelefoneBR, apenasDigitos } from "@/lib/format";
 import { getGuest, setGuest, clearGuest } from "@/lib/auth";
@@ -144,9 +144,14 @@ export function AreaConvidado({ evento }: { evento: EventoPublico }) {
         </button>
       </div>
 
-      {temConfirmacao && <Indicador passo={passo} />}
+      <Indicador passo={passo} temConfirmacao={temConfirmacao} />
 
-      {temConfirmacao && passo === 1 ? (
+      {passo === 3 ? (
+        <TelaAgradecimento
+          mensagem={evento.mensagemAgradecimento}
+          onVoltar={() => setPasso(2)}
+        />
+      ) : temConfirmacao && passo === 1 ? (
         <PassoConfirmacao
           slug={slug}
           token={sessao.token}
@@ -160,6 +165,7 @@ export function AreaConvidado({ evento }: { evento: EventoPublico }) {
           token={sessao.token}
           permiteDinheiro={evento.presenteDinheiroHabilitado}
           onVoltar={temConfirmacao ? () => setPasso(1) : undefined}
+          onConcluir={() => setPasso(3)}
           onSessaoInvalida={sessaoInvalida}
         />
       )}
@@ -167,38 +173,90 @@ export function AreaConvidado({ evento }: { evento: EventoPublico }) {
   );
 }
 
-function Indicador({ passo }: { passo: number }) {
-  const etapas = ["Presença", "Presente"];
+function TelaAgradecimento({
+  mensagem,
+  onVoltar,
+}: {
+  mensagem: string | null;
+  onVoltar: () => void;
+}) {
   return (
-    <div className="flex items-center justify-center gap-3">
-      {etapas.map((label, i) => {
-        const n = i + 1;
-        const ativo = passo === n;
-        const feito = passo > n;
-        return (
-          <div key={label} className="flex items-center gap-3">
-            <span
-              className={
-                "flex items-center gap-2 text-sm transition-colors " +
-                (ativo || feito ? "font-medium text-foreground" : "text-muted-foreground")
-              }
-            >
-              <span
-                className={
-                  "grid size-[25px] place-items-center rounded-full text-[13px] transition-colors " +
-                  (ativo || feito
-                    ? "brand-gradient border border-transparent text-white"
-                    : "border border-border bg-white text-muted-foreground")
-                }
-              >
-                {feito ? <Check className="size-3.5" /> : n}
-              </span>
-              {label}
-            </span>
-            {i === 0 && <span className="h-px w-12 bg-border" />}
-          </div>
-        );
-      })}
+    <Card className="rise rounded-[22px] border-border text-center shadow-[0_30px_60px_-34px_rgba(110,31,67,0.4)]">
+      <CardContent className="space-y-5 p-7 sm:p-8">
+        <span className="brand-gradient mx-auto grid size-16 place-items-center rounded-3xl text-white shadow-[0_18px_40px_-16px_rgba(142,43,87,0.6)]">
+          <Heart className="size-8" />
+        </span>
+        <div>
+          <h2 className="font-serif text-3xl">Tudo certo!</h2>
+          <p className="mx-auto mt-2 max-w-[420px] font-serif text-lg italic leading-relaxed text-foreground">
+            {mensagem?.trim() ||
+              "Muito obrigado por fazer parte do nosso dia! Seu carinho já é o nosso maior presente. 💕"}
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          className="h-11 w-full text-muted-foreground hover:text-plum"
+          onClick={onVoltar}
+        >
+          <Gift className="size-4" /> Ver / escolher mais presentes
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
+type Etapa = { n: number; label: string; Icon: typeof Check; dica: string };
+
+function Indicador({ passo, temConfirmacao }: { passo: number; temConfirmacao: boolean }) {
+  const todas: Etapa[] = [
+    { n: 1, label: "Presença", Icon: CalendarCheck, dica: "Confirme se você vai ao evento." },
+    { n: 2, label: "Presentes", Icon: Gift, dica: "Adicione os presentes e toque em Confirmar." },
+    { n: 3, label: "Pronto", Icon: Heart, dica: "Tudo certo — obrigado!" },
+  ];
+  const etapas = temConfirmacao ? todas : todas.filter((e) => e.n >= 2);
+  const dica = todas.find((e) => e.n === passo)?.dica;
+
+  return (
+    <div className="space-y-2.5">
+      <div className="flex items-center justify-center">
+        {etapas.map((e, i) => {
+          const ativo = passo === e.n;
+          const feito = passo > e.n;
+          return (
+            <div key={e.n} className="flex items-center">
+              <div className="flex flex-col items-center gap-1.5">
+                <span
+                  className={
+                    "grid size-9 place-items-center rounded-full border transition-colors " +
+                    (ativo || feito
+                      ? "brand-gradient border-transparent text-white"
+                      : "border-border bg-white text-muted-foreground")
+                  }
+                >
+                  {feito ? <Check className="size-4" /> : <e.Icon className="size-[18px]" />}
+                </span>
+                <span
+                  className={
+                    "text-xs transition-colors " +
+                    (ativo || feito ? "font-medium text-foreground" : "text-muted-foreground")
+                  }
+                >
+                  {e.label}
+                </span>
+              </div>
+              {i < etapas.length - 1 && (
+                <span
+                  className={
+                    "mx-1.5 mb-5 h-px w-10 transition-colors sm:w-16 " +
+                    (passo > e.n ? "bg-rose" : "bg-border")
+                  }
+                />
+              )}
+            </div>
+          );
+        })}
+      </div>
+      {dica && <p className="text-center text-sm text-muted-foreground">{dica}</p>}
     </div>
   );
 }

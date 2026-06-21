@@ -118,7 +118,8 @@ public class EventoController {
                                           @Valid @RequestBody AtualizarEventoRequest req) {
         atualizarEvento.executar(sessao.contaId(), eventoId, new AtualizarEvento.Comando(
                 req.nome(), req.descricao(), req.dataEvento(), req.local(), req.mensagemCasal(),
-                req.mensagemFinal(), req.rsvpHabilitado(), req.prazoRsvp(), req.presenteDinheiroHabilitado()));
+                req.mensagemFinal(), req.mensagemAgradecimento(), req.rsvpHabilitado(), req.prazoRsvp(),
+                req.presenteDinheiroHabilitado()));
         return ResponseEntity.noContent().build();
     }
 
@@ -253,8 +254,8 @@ public class EventoController {
 
     public record AtualizarEventoRequest(@NotBlank String nome, String descricao, LocalDate dataEvento,
                                          String local, String mensagemCasal, String mensagemFinal,
-                                         boolean rsvpHabilitado, Instant prazoRsvp,
-                                         boolean presenteDinheiroHabilitado) {}
+                                         String mensagemAgradecimento, boolean rsvpHabilitado,
+                                         Instant prazoRsvp, boolean presenteDinheiroHabilitado) {}
 
     public record PresenteRequest(@NotBlank String nome, String variante, @Positive int quantidade,
                                   String linkProduto, String imagemUrl) {}

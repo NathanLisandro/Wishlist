@@ -13,6 +13,7 @@ export type EventoPublico = {
   local: string | null;
   mensagemCasal: string | null;
   mensagemFinal: string | null;
+  mensagemAgradecimento: string | null;
 };
 
 export type RsvpAtual = {
@@ -68,6 +69,7 @@ export type EventoDetalhe = {
   local: string | null;
   mensagemCasal: string | null;
   mensagemFinal: string | null;
+  mensagemAgradecimento: string | null;
   rsvpHabilitado: boolean;
   presenteDinheiroHabilitado: boolean;
   status: string;

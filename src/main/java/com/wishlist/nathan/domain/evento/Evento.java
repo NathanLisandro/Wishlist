@@ -27,6 +27,7 @@ public class Evento {
     private String local;            // "Onde" (opcional)
     private String mensagemCasal;    // recado/citação na landing (opcional)
     private String mensagemFinal;    // frase de despedida no rodapé (opcional)
+    private String mensagemAgradecimento; // exibida após confirmar os presentes (opcional)
     private final Instant criadoEm;
 
     public Evento(UUID id, UUID contaId, short categoriaId, Slug slug, String nome, String descricao,
@@ -60,8 +61,8 @@ public class Evento {
      * Usado por {@code AtualizarEvento}.
      */
     public void editar(String nome, String descricao, LocalDate dataEvento, String local,
-                       String mensagemCasal, String mensagemFinal, boolean rsvpHabilitado,
-                       Instant prazoRsvp, boolean presenteDinheiroHabilitado) {
+                       String mensagemCasal, String mensagemFinal, String mensagemAgradecimento,
+                       boolean rsvpHabilitado, Instant prazoRsvp, boolean presenteDinheiroHabilitado) {
         if (nome == null || nome.isBlank()) {
             throw new IllegalArgumentException("nome é obrigatório");
         }
@@ -71,6 +72,7 @@ public class Evento {
         this.local = local;
         this.mensagemCasal = mensagemCasal;
         this.mensagemFinal = mensagemFinal;
+        this.mensagemAgradecimento = mensagemAgradecimento;
         this.rsvpHabilitado = rsvpHabilitado;
         this.prazoRsvp = prazoRsvp;
         this.presenteDinheiroHabilitado = presenteDinheiroHabilitado;
@@ -115,13 +117,16 @@ public class Evento {
     public String getLocal() { return local; }
     public String getMensagemCasal() { return mensagemCasal; }
     public String getMensagemFinal() { return mensagemFinal; }
+    public String getMensagemAgradecimento() { return mensagemAgradecimento; }
     public Instant getCriadoEm() { return criadoEm; }
 
     /** Reidrata os campos opcionais ao reconstruir a partir do banco. */
-    public void hidratarDetalhes(String fotoUrl, String local, String mensagemCasal, String mensagemFinal) {
+    public void hidratarDetalhes(String fotoUrl, String local, String mensagemCasal,
+                                 String mensagemFinal, String mensagemAgradecimento) {
         this.fotoUrl = fotoUrl;
         this.local = local;
         this.mensagemCasal = mensagemCasal;
         this.mensagemFinal = mensagemFinal;
+        this.mensagemAgradecimento = mensagemAgradecimento;
     }
 }

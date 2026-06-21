@@ -30,6 +30,9 @@ export function Personalizacao({
   const [local, setLocal] = useState(detalhe.local ?? "");
   const [mensagem, setMensagem] = useState(detalhe.mensagemCasal ?? "");
   const [mensagemFinal, setMensagemFinal] = useState(detalhe.mensagemFinal ?? "");
+  const [mensagemAgradecimento, setMensagemAgradecimento] = useState(
+    detalhe.mensagemAgradecimento ?? "",
+  );
   const [descricao, setDescricao] = useState(detalhe.descricao ?? "");
   const [rsvp, setRsvp] = useState(detalhe.rsvpHabilitado);
   const [dinheiro, setDinheiro] = useState(detalhe.presenteDinheiroHabilitado);
@@ -74,6 +77,7 @@ export function Personalizacao({
           local: local || null,
           mensagemCasal: mensagem || null,
           mensagemFinal: mensagemFinal || null,
+          mensagemAgradecimento: mensagemAgradecimento || null,
           rsvpHabilitado: rsvp,
           prazoRsvp: null,
           presenteDinheiroHabilitado: dinheiro,
@@ -195,6 +199,19 @@ export function Personalizacao({
                   placeholder="Mal podemos esperar por você."
                   value={mensagemFinal}
                   onChange={(e) => setMensagemFinal(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="p-thanks">
+                  Mensagem de agradecimento (após o convidado confirmar os presentes)
+                </Label>
+                <Textarea
+                  id="p-thanks"
+                  rows={2}
+                  maxLength={280}
+                  placeholder="Muito obrigado por fazer parte do nosso dia! 💕"
+                  value={mensagemAgradecimento}
+                  onChange={(e) => setMensagemAgradecimento(e.target.value)}
                 />
               </div>
               <div className="space-y-2">

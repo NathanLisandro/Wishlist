@@ -38,6 +38,7 @@ public class EventoRepositorioAdapter implements EventoRepositorioPort {
         jpa.setLocation(evento.getLocal());
         jpa.setCoupleMessage(evento.getMensagemCasal());
         jpa.setClosingMessage(evento.getMensagemFinal());
+        jpa.setThankYouMessage(evento.getMensagemAgradecimento());
         return paraDominio(repo.save(jpa));
     }
 
@@ -66,7 +67,7 @@ public class EventoRepositorioAdapter implements EventoRepositorioPort {
                 j.getName(), j.getDescription(), j.getEventDate(), j.isRsvpEnabled(),
                 j.getRsvpDeadline(), j.isMoneyGiftEnabled(), j.getStatus(), j.getCreatedAt());
         evento.hidratarDetalhes(j.getPhotoUrl(), j.getLocation(), j.getCoupleMessage(),
-                j.getClosingMessage());
+                j.getClosingMessage(), j.getThankYouMessage());
         return evento;
     }
 }

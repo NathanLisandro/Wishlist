@@ -26,12 +26,12 @@ public class ConsultarEventoAdmin {
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Evento não encontrado"));
         return new Resultado(e.getId(), e.getSlug().valor(), e.getNome(), e.getDescricao(),
                 e.getDataEvento(), e.getLocal(), e.getMensagemCasal(), e.getMensagemFinal(),
-                e.isRsvpHabilitado(), e.isPresenteDinheiroHabilitado(), e.getStatus().name(),
-                e.getFotoUrl());
+                e.getMensagemAgradecimento(), e.isRsvpHabilitado(), e.isPresenteDinheiroHabilitado(),
+                e.getStatus().name(), e.getFotoUrl());
     }
 
     public record Resultado(UUID id, String slug, String nome, String descricao, LocalDate dataEvento,
                             String local, String mensagemCasal, String mensagemFinal,
-                            boolean rsvpHabilitado, boolean presenteDinheiroHabilitado, String status,
-                            String fotoUrl) {}
+                            String mensagemAgradecimento, boolean rsvpHabilitado,
+                            boolean presenteDinheiroHabilitado, String status, String fotoUrl) {}
 }
