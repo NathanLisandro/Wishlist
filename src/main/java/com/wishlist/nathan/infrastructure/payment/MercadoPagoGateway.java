@@ -6,9 +6,12 @@ import com.mercadopago.client.preference.PreferenceItemRequest;
 import com.mercadopago.client.preference.PreferenceRequest;
 import com.mercadopago.client.payment.PaymentClient;
 import com.mercadopago.core.MPRequestOptions;
+import com.mercadopago.exceptions.MPApiException;
 import com.mercadopago.resources.payment.Payment;
 import com.mercadopago.resources.preference.Preference;
 import com.wishlist.nathan.application.port.PagamentoGateway;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.Mac;
@@ -23,6 +26,8 @@ import java.util.List;
  */
 @Component
 public class MercadoPagoGateway implements PagamentoGateway {
+
+    private static final Logger log = LoggerFactory.getLogger(MercadoPagoGateway.class);
 
     private final PreferenceClient preferenceClient = new PreferenceClient();
     private final PaymentClient paymentClient = new PaymentClient();
@@ -47,9 +52,27 @@ public class MercadoPagoGateway implements PagamentoGateway {
             }
             Preference pref = preferenceClient.create(builder.build(), opcoes(accessToken));
             return new PreferenceCriada(pref.getId(), pref.getInitPoint());
+        } catch (MPApiException e) {
+            // Surface o motivo REAL do Mercado Pago (ex.: back_url inválida, token errado).
+            String detalhe = detalheMp(e);
+            log.error("Mercado Pago recusou a preference (status {}): {}", statusMp(e), detalhe);
+            throw new IllegalStateException("Mercado Pago recusou: " + detalhe, e);
         } catch (Exception e) {
+            log.error("Falha ao criar preference no Mercado Pago", e);
             throw new IllegalStateException("Falha ao criar preference no Mercado Pago", e);
         }
+    }
+
+    private static int statusMp(MPApiException e) {
+        return e.getApiResponse() != null ? e.getApiResponse().getStatusCode() : 0;
+    }
+
+    /** Corpo de erro do MP (JSON) — não contém PII do convidado, é seguro logar. */
+    private static String detalheMp(MPApiException e) {
+        if (e.getApiResponse() != null && e.getApiResponse().getContent() != null) {
+            return e.getApiResponse().getContent();
+        }
+        return e.getMessage();
     }
 
     @Override
@@ -61,7 +84,13 @@ public class MercadoPagoGateway implements PagamentoGateway {
                     pagamento.getStatus(),
                     pagamento.getExternalReference(),
                     pagamento.getTransactionAmount());
+        } catch (MPApiException e) {
+            String detalhe = detalheMp(e);
+            log.error("Mercado Pago recusou a consulta do pagamento {} (status {}): {}",
+                    paymentId, statusMp(e), detalhe);
+            throw new IllegalStateException("Mercado Pago recusou a consulta: " + detalhe, e);
         } catch (Exception e) {
+            log.error("Falha ao consultar pagamento {} no Mercado Pago", paymentId, e);
             throw new IllegalStateException("Falha ao consultar pagamento no Mercado Pago", e);
         }
     }
