@@ -63,6 +63,11 @@ public class ItemPresenteRepositorioAdapter implements ItemPresenteRepositorioPo
         repo.deleteById(id);
     }
 
+    @Override
+    public long apagarPorEvento(UUID eventoId) {
+        return repo.deleteByEventId(eventoId);
+    }
+
     private ItemPresente paraDominio(ItemPresenteJpa j) {
         return new ItemPresente(j.getId(), j.getEventId(), j.getName(), j.getVariant(),
                 new Quantidade(j.getTotalQuantity()), j.getProductLink(), j.getImageUrl(),

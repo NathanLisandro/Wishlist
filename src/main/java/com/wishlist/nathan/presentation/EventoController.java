@@ -16,6 +16,7 @@ import com.wishlist.nathan.application.usecase.ListarPresentesAdmin;
 import com.wishlist.nathan.application.usecase.RemoverConvidado;
 import com.wishlist.nathan.application.usecase.RemoverPresente;
 import com.wishlist.nathan.application.usecase.RemoverTodosConvidados;
+import com.wishlist.nathan.application.usecase.RemoverTodosPresentes;
 import com.wishlist.nathan.application.usecase.SalvarFotoEvento;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -56,6 +57,7 @@ public class EventoController {
     private final AdicionarPresente adicionarPresente;
     private final EditarPresente editarPresente;
     private final RemoverPresente removerPresente;
+    private final RemoverTodosPresentes removerTodosPresentes;
     private final ListarPresentesAdmin listarPresentesAdmin;
     private final AdicionarConvidado adicionarConvidado;
     private final EditarConvidado editarConvidado;
@@ -69,7 +71,8 @@ public class EventoController {
     public EventoController(CriarEvento criarEvento, ConsultarEventoAdmin consultarEventoAdmin,
                            AtualizarEvento atualizarEvento, SalvarFotoEvento salvarFotoEvento,
                            AdicionarPresente adicionarPresente, EditarPresente editarPresente,
-                           RemoverPresente removerPresente, ListarPresentesAdmin listarPresentesAdmin,
+                           RemoverPresente removerPresente, RemoverTodosPresentes removerTodosPresentes,
+                           ListarPresentesAdmin listarPresentesAdmin,
                            AdicionarConvidado adicionarConvidado, EditarConvidado editarConvidado,
                            RemoverConvidado removerConvidado, RemoverTodosConvidados removerTodosConvidados,
                            ListarConvidados listarConvidados, ImportarListaPresentes importarPresentes,
@@ -81,6 +84,7 @@ public class EventoController {
         this.adicionarPresente = adicionarPresente;
         this.editarPresente = editarPresente;
         this.removerPresente = removerPresente;
+        this.removerTodosPresentes = removerTodosPresentes;
         this.listarPresentesAdmin = listarPresentesAdmin;
         this.adicionarConvidado = adicionarConvidado;
         this.editarConvidado = editarConvidado;
@@ -163,6 +167,13 @@ public class EventoController {
                                                 @PathVariable UUID eventoId, @PathVariable UUID presenteId) {
         removerPresente.executar(sessao.contaId(), eventoId, presenteId);
         return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{eventoId}/gifts")
+    public Map<String, Long> removerTodosPresentes(@AuthenticationPrincipal SessaoAdmin sessao,
+                                                   @PathVariable UUID eventoId) {
+        long removidos = removerTodosPresentes.executar(sessao.contaId(), eventoId);
+        return Map.of("removidos", removidos);
     }
 
     // ---- Convidados ----

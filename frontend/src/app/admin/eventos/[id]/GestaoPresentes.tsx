@@ -37,6 +37,7 @@ export function GestaoPresentes({
   const [form, setForm] = useState<Form | null>(null);
   const [salvando, setSalvando] = useState(false);
   const [remover, setRemover] = useState<ItemAdmin | null>(null);
+  const [removerTodos, setRemoverTodos] = useState(false);
 
   const carregar = useCallback(async () => {
     try {
@@ -93,18 +94,40 @@ export function GestaoPresentes({
     }
   }
 
+  async function confirmarRemoverTodos() {
+    try {
+      const r = await api.del<{ removidos: number }>(`/events/${eventoId}/gifts`, token);
+      toast.success(`${r?.removidos ?? 0} presente(s) removido(s).`);
+      setRemoverTodos(false);
+      await carregar();
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : "Erro ao limpar a lista");
+    }
+  }
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">
           {itens.length} presente(s) na lista.
         </p>
-        <Button
-          onClick={() => setForm({ ...VAZIO })}
-          className="brand-gradient h-10 border-0 text-white hover:opacity-95"
-        >
-          <Plus className="size-4" /> Adicionar presente
-        </Button>
+        <div className="flex gap-2">
+          {itens.length > 0 && (
+            <Button
+              variant="outline"
+              onClick={() => setRemoverTodos(true)}
+              className="h-10 text-muted-foreground hover:border-rose hover:text-rose"
+            >
+              <Trash2 className="size-4" /> Excluir todos
+            </Button>
+          )}
+          <Button
+            onClick={() => setForm({ ...VAZIO })}
+            className="brand-gradient h-10 border-0 text-white hover:opacity-95"
+          >
+            <Plus className="size-4" /> Adicionar presente
+          </Button>
+        </div>
       </div>
 
       {carregando ? (
@@ -298,6 +321,33 @@ export function GestaoPresentes({
               onClick={confirmarRemover}
             >
               Remover
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Confirmar remoção de todos */}
+      <Modal open={removerTodos} onClose={() => setRemoverTodos(false)}>
+        <div className="space-y-4 text-center">
+          <div className="mx-auto grid size-12 place-items-center rounded-2xl bg-rose-50 text-rose">
+            <Trash2 className="size-6" />
+          </div>
+          <div>
+            <h3 className="font-serif text-2xl">Excluir todos os presentes</h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Isso apaga os <strong>{itens.length}</strong> presentes e as reservas feitas
+              neles. Não dá para desfazer.
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" className="h-11 flex-1" onClick={() => setRemoverTodos(false)}>
+              Cancelar
+            </Button>
+            <Button
+              className="h-11 flex-1 border-0 bg-rose text-white hover:opacity-90"
+              onClick={confirmarRemoverTodos}
+            >
+              Excluir todos
             </Button>
           </div>
         </div>

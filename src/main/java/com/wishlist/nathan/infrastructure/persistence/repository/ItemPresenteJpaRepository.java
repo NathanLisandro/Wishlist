@@ -18,6 +18,8 @@ public interface ItemPresenteJpaRepository extends JpaRepository<ItemPresenteJpa
 
     List<ItemPresenteJpa> findByEventIdAndStatusNotOrderByCreatedAt(UUID eventId, StatusPresente status);
 
+    long deleteByEventId(UUID eventId);
+
     /** Lock pessimista (SELECT ... FOR UPDATE) para a reserva sem oversell. */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select i from ItemPresenteJpa i where i.id = :id")

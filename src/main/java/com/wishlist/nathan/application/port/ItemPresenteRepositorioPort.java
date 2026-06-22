@@ -26,4 +26,7 @@ public interface ItemPresenteRepositorioPort {
 
     /** Remove fisicamente um item (usado quando não há reservas). */
     void apagar(UUID id);
+
+    /** Remove TODOS os presentes do evento (cascata limpa as reservas). Devolve quantos. */
+    long apagarPorEvento(UUID eventoId);
 }
