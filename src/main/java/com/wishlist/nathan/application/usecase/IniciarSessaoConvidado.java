@@ -12,6 +12,8 @@ import com.wishlist.nathan.domain.comum.Telefone;
 import com.wishlist.nathan.domain.convidado.AcaoAcessoConvidado;
 import com.wishlist.nathan.domain.convidado.Convidado;
 import com.wishlist.nathan.domain.evento.Evento;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -22,6 +24,8 @@ import java.util.Optional;
  */
 @Service
 public class IniciarSessaoConvidado {
+
+    private static final Logger log = LoggerFactory.getLogger("usecase");
 
     private final EventoRepositorioPort eventos;
     private final ConvidadoRepositorioPort convidados;
@@ -50,6 +54,8 @@ public class IniciarSessaoConvidado {
         if (achado.isEmpty()) {
             acessos.registrar(evento.getId(), null, phoneHash,
                     AcaoAcessoConvidado.LOGIN_FAILED, cmd.ip(), cmd.userAgent());
+            log.warn("Login convidado FALHOU: telefone='{}' não está na lista do evento '{}'",
+                    cmd.telefone(), cmd.slug());
             throw new CredenciaisInvalidasException("Telefone não encontrado na lista deste evento");
         }
 
@@ -58,6 +64,8 @@ public class IniciarSessaoConvidado {
                 AcaoAcessoConvidado.LOGIN_SUCCESS, cmd.ip(), cmd.userAgent());
 
         String nome = cripto.descriptografar(convidado.getNomeCifrado().conteudo());
+        log.info("Login convidado OK: nome='{}' telefone='{}' convidadoId={} evento='{}'",
+                nome, cmd.telefone(), convidado.getId(), cmd.slug());
         String token = tokens.emitirTokenConvidado(evento.getId(), convidado.getId());
         return new Resultado(token, nome, convidado.getAcompanhantesPermitidos(),
                 evento.getNome(), evento.getSlug().valor());

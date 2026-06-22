@@ -38,6 +38,10 @@ dependencies {
 	// Web + Segurança
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+	// AOP: aspecto que loga toda execução de caso de uso (observabilidade).
+	// Boot 4 não tem starter-aop no BOM; o aspectjweaver basta (Spring liga o
+	// @EnableAspectJAutoProxy ao detectá-lo no classpath).
+	implementation 'org.aspectj:aspectjweaver'
 
 	// Persistência + Validação + Migrations
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
