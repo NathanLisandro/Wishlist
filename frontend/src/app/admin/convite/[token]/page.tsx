@@ -20,7 +20,8 @@ export default function ConvitePage() {
   const [preview, setPreview] = useState<ConvitePreview | null>(null);
   const [invalido, setInvalido] = useState(false);
   const [logado, setLogado] = useState<string | null>(null);
-  const [modo, setModo] = useState<"entrar" | "criar">("entrar");
+  // Quem recebe o convite normalmente ainda não tem conta -> abre em "Criar conta".
+  const [modo, setModo] = useState<"entrar" | "criar">("criar");
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
@@ -124,7 +125,7 @@ export default function ConvitePage() {
           ) : (
             <>
               <div className="flex rounded-lg border border-border bg-muted/40 p-1">
-                {(["entrar", "criar"] as const).map((m) => (
+                {(["criar", "entrar"] as const).map((m) => (
                   <button
                     key={m}
                     type="button"
