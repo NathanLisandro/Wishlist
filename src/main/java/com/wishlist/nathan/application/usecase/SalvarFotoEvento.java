@@ -17,19 +17,20 @@ import java.util.UUID;
 public class SalvarFotoEvento {
 
     private final EventoRepositorioPort eventos;
+    private final AcessoEvento acessoEvento;
     private final ArmazenamentoPort armazenamento;
 
-    public SalvarFotoEvento(EventoRepositorioPort eventos, ArmazenamentoPort armazenamento) {
+    public SalvarFotoEvento(EventoRepositorioPort eventos, AcessoEvento acessoEvento,
+                            ArmazenamentoPort armazenamento) {
         this.eventos = eventos;
+        this.acessoEvento = acessoEvento;
         this.armazenamento = armazenamento;
     }
 
     @Transactional
     public String executar(UUID contaId, UUID eventoId, String nomeOriginal,
                            String contentType, byte[] conteudo) {
-        Evento evento = eventos.buscarPorId(eventoId)
-                .filter(e -> e.getContaId().equals(contaId))
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Evento não encontrado"));
+        Evento evento = acessoEvento.exigir(contaId, eventoId);
 
         String anterior = evento.getFotoUrl();
         String nova = armazenamento.salvar("eventos/" + eventoId, nomeOriginal, contentType, conteudo);

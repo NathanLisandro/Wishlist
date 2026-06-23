@@ -22,14 +22,14 @@ import java.util.UUID;
 @Service
 public class ListarConvidados {
 
-    private final EventoRepositorioPort eventos;
+    private final AcessoEvento acessoEvento;
     private final ConvidadoRepositorioPort convidados;
     private final RsvpRepositorioPort rsvps;
     private final CriptografiaPort cripto;
 
-    public ListarConvidados(EventoRepositorioPort eventos, ConvidadoRepositorioPort convidados,
+    public ListarConvidados(AcessoEvento acessoEvento, ConvidadoRepositorioPort convidados,
                             RsvpRepositorioPort rsvps, CriptografiaPort cripto) {
-        this.eventos = eventos;
+        this.acessoEvento = acessoEvento;
         this.convidados = convidados;
         this.rsvps = rsvps;
         this.cripto = cripto;
@@ -37,9 +37,7 @@ public class ListarConvidados {
 
     @Transactional(readOnly = true)
     public List<ConvidadoPainel> executar(UUID contaId, UUID eventoId) {
-        Evento evento = eventos.buscarPorId(eventoId)
-                .filter(e -> e.getContaId().equals(contaId))
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Evento não encontrado"));
+        Evento evento = acessoEvento.exigir(contaId, eventoId);
 
         return convidados.listarPorEvento(evento.getId()).stream().map(c -> {
             Rsvp rsvp = rsvps.buscarPorEventoEConvidado(evento.getId(), c.getId()).orElse(null);

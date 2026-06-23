@@ -27,7 +27,7 @@ import java.util.UUID;
 @Service
 public class ConsultarDashboard {
 
-    private final EventoRepositorioPort eventos;
+    private final AcessoEvento acessoEvento;
     private final ConvidadoRepositorioPort convidados;
     private final RsvpRepositorioPort rsvps;
     private final ReservaPresenteRepositorioPort reservas;
@@ -35,11 +35,11 @@ public class ConsultarDashboard {
     private final RegistroAcessoPort acessos;
     private final CriptografiaPort cripto;
 
-    public ConsultarDashboard(EventoRepositorioPort eventos, ConvidadoRepositorioPort convidados,
+    public ConsultarDashboard(AcessoEvento acessoEvento, ConvidadoRepositorioPort convidados,
                               RsvpRepositorioPort rsvps, ReservaPresenteRepositorioPort reservas,
                               MoneyGiftRepositorioPort moneyGifts, RegistroAcessoPort acessos,
                               CriptografiaPort cripto) {
-        this.eventos = eventos;
+        this.acessoEvento = acessoEvento;
         this.convidados = convidados;
         this.rsvps = rsvps;
         this.reservas = reservas;
@@ -50,9 +50,7 @@ public class ConsultarDashboard {
 
     @Transactional(readOnly = true)
     public Resultado executar(UUID contaId, UUID eventoId) {
-        Evento evento = eventos.buscarPorId(eventoId)
-                .filter(e -> e.getContaId().equals(contaId))
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Evento não encontrado"));
+        Evento evento = acessoEvento.exigir(contaId, eventoId);
 
         long confirmados = rsvps.contarPorEventoEStatus(eventoId, StatusRsvp.CONFIRMED);
         long acompanhantes = rsvps.contarAcompanhantesConfirmados(eventoId);

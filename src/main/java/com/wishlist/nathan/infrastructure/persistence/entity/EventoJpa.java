@@ -71,6 +71,9 @@ public class EventoJpa {
     @Column(name = "thank_you_message")
     private String thankYouMessage;
 
+    @Column(name = "manage_invite_token")
+    private String manageInviteToken;
+
     @Column(name = "created_at", insertable = false, updatable = false)
     private Instant createdAt;
 }

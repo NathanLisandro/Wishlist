@@ -15,6 +15,7 @@ import { GestaoPresentes } from "./GestaoPresentes";
 import { GestaoConvidados } from "./GestaoConvidados";
 import { Personalizacao } from "./Personalizacao";
 import { Pagamento } from "./Pagamento";
+import { CoGestao } from "./CoGestao";
 
 export default function GerenciarEventoPage() {
   const router = useRouter();
@@ -66,6 +67,13 @@ export default function GerenciarEventoPage() {
         <div className="flex items-center gap-2">
           {detalhe && (
             <>
+              {detalhe.dono && (
+                <CoGestao
+                  token={token}
+                  eventoId={eventoId}
+                  tokenInicial={detalhe.tokenConviteGestao}
+                />
+              )}
               <button
                 onClick={copiarLink}
                 className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-[13px] font-medium text-muted-foreground transition-colors hover:border-lilac-line hover:bg-white hover:text-plum"
@@ -101,7 +109,9 @@ export default function GerenciarEventoPage() {
           <TabsTrigger value="presentes" className="cursor-pointer">Presentes</TabsTrigger>
           <TabsTrigger value="convidados" className="cursor-pointer">Convidados</TabsTrigger>
           <TabsTrigger value="personalizar" className="cursor-pointer">Personalizar</TabsTrigger>
-          <TabsTrigger value="pagamento" className="cursor-pointer">Pagamento</TabsTrigger>
+          {detalhe?.dono && (
+            <TabsTrigger value="pagamento" className="cursor-pointer">Pagamento</TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="visao" className="mt-5">
@@ -120,9 +130,11 @@ export default function GerenciarEventoPage() {
             <p className="py-8 text-center text-muted-foreground">Carregando...</p>
           )}
         </TabsContent>
-        <TabsContent value="pagamento" className="mt-5">
-          <Pagamento token={token} />
-        </TabsContent>
+        {detalhe?.dono && (
+          <TabsContent value="pagamento" className="mt-5">
+            <Pagamento token={token} />
+          </TabsContent>
+        )}
       </Tabs>
     </main>
   );

@@ -74,6 +74,8 @@ export type EventoDetalhe = {
   presenteDinheiroHabilitado: boolean;
   status: string;
   fotoUrl: string | null;
+  dono: boolean;
+  tokenConviteGestao: string | null;
 };
 
 export type EventoResumo = {
@@ -83,6 +85,18 @@ export type EventoResumo = {
   status: string;
   dataEvento: string | null;
   fotoUrl: string | null;
+  dono: boolean;
+};
+
+export type Colaborador = {
+  contaId: string;
+  email: string;
+  nomeExibicao: string;
+};
+
+export type ConvitePreview = {
+  nomeEvento: string;
+  slug: string;
 };
 
 export type ReservaResultado = {

@@ -198,6 +198,11 @@ export default function EventosPage() {
                     <Badge variant="secondary" className="flex-none">
                       {ev.status}
                     </Badge>
+                    {!ev.dono && (
+                      <Badge className="flex-none border-lilac-line bg-lilac text-plum">
+                        Co-gestão
+                      </Badge>
+                    )}
                   </div>
                   <p className="truncate text-sm text-muted-foreground">/e/{ev.slug}</p>
                   {ev.dataEvento && (

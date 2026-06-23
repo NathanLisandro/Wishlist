@@ -6,6 +6,9 @@ import com.wishlist.nathan.application.usecase.AdicionarPresente;
 import com.wishlist.nathan.application.usecase.AtualizarEvento;
 import com.wishlist.nathan.application.usecase.ConsultarEventoAdmin;
 import com.wishlist.nathan.application.usecase.CriarEvento;
+import com.wishlist.nathan.application.usecase.GerarConviteGestao;
+import com.wishlist.nathan.application.usecase.ListarColaboradores;
+import com.wishlist.nathan.application.usecase.RemoverColaborador;
 import com.wishlist.nathan.application.usecase.EditarConvidado;
 import com.wishlist.nathan.application.usecase.EditarPresente;
 import com.wishlist.nathan.application.usecase.ImportarConvidados;
@@ -67,6 +70,9 @@ public class EventoController {
     private final ImportarListaPresentes importarPresentes;
     private final ImportarConvidados importarConvidados;
     private final ListarEventos listarEventos;
+    private final GerarConviteGestao gerarConviteGestao;
+    private final ListarColaboradores listarColaboradores;
+    private final RemoverColaborador removerColaborador;
 
     public EventoController(CriarEvento criarEvento, ConsultarEventoAdmin consultarEventoAdmin,
                            AtualizarEvento atualizarEvento, SalvarFotoEvento salvarFotoEvento,
@@ -76,7 +82,9 @@ public class EventoController {
                            AdicionarConvidado adicionarConvidado, EditarConvidado editarConvidado,
                            RemoverConvidado removerConvidado, RemoverTodosConvidados removerTodosConvidados,
                            ListarConvidados listarConvidados, ImportarListaPresentes importarPresentes,
-                           ImportarConvidados importarConvidados, ListarEventos listarEventos) {
+                           ImportarConvidados importarConvidados, ListarEventos listarEventos,
+                           GerarConviteGestao gerarConviteGestao, ListarColaboradores listarColaboradores,
+                           RemoverColaborador removerColaborador) {
         this.criarEvento = criarEvento;
         this.consultarEventoAdmin = consultarEventoAdmin;
         this.atualizarEvento = atualizarEvento;
@@ -94,6 +102,9 @@ public class EventoController {
         this.importarPresentes = importarPresentes;
         this.importarConvidados = importarConvidados;
         this.listarEventos = listarEventos;
+        this.gerarConviteGestao = gerarConviteGestao;
+        this.listarColaboradores = listarColaboradores;
+        this.removerColaborador = removerColaborador;
     }
 
     @GetMapping
@@ -124,6 +135,35 @@ public class EventoController {
                 req.nome(), req.descricao(), req.dataEvento(), req.local(), req.mensagemCasal(),
                 req.mensagemFinal(), req.mensagemAgradecimento(), req.rsvpHabilitado(), req.prazoRsvp(),
                 req.presenteDinheiroHabilitado()));
+        return ResponseEntity.noContent().build();
+    }
+
+    // ---- Co-gestão (compartilhar o evento) ----
+
+    @PostMapping("/{eventoId}/manage-invite")
+    public Map<String, String> gerarConvite(@AuthenticationPrincipal SessaoAdmin sessao,
+                                            @PathVariable UUID eventoId) {
+        return Map.of("token", gerarConviteGestao.executar(sessao.contaId(), eventoId));
+    }
+
+    @DeleteMapping("/{eventoId}/manage-invite")
+    public ResponseEntity<Void> revogarConvite(@AuthenticationPrincipal SessaoAdmin sessao,
+                                               @PathVariable UUID eventoId) {
+        gerarConviteGestao.revogar(sessao.contaId(), eventoId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{eventoId}/collaborators")
+    public List<ListarColaboradores.Colaborador> colaboradores(@AuthenticationPrincipal SessaoAdmin sessao,
+                                                               @PathVariable UUID eventoId) {
+        return listarColaboradores.executar(sessao.contaId(), eventoId);
+    }
+
+    @DeleteMapping("/{eventoId}/collaborators/{colaboradorId}")
+    public ResponseEntity<Void> removerColaborador(@AuthenticationPrincipal SessaoAdmin sessao,
+                                                   @PathVariable UUID eventoId,
+                                                   @PathVariable UUID colaboradorId) {
+        removerColaborador.executar(sessao.contaId(), eventoId, colaboradorId);
         return ResponseEntity.noContent().build();
     }
 

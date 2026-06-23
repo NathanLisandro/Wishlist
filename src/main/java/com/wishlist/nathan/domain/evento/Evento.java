@@ -28,6 +28,7 @@ public class Evento {
     private String mensagemCasal;    // recado/citação na landing (opcional)
     private String mensagemFinal;    // frase de despedida no rodapé (opcional)
     private String mensagemAgradecimento; // exibida após confirmar os presentes (opcional)
+    private String tokenConviteGestao;    // token do link de co-gestão (opcional)
     private final Instant criadoEm;
 
     public Evento(UUID id, UUID contaId, short categoriaId, Slug slug, String nome, String descricao,
@@ -82,6 +83,10 @@ public class Evento {
         this.fotoUrl = fotoUrl;
     }
 
+    public void definirTokenConviteGestao(String token) {
+        this.tokenConviteGestao = token;
+    }
+
     public void publicar() {
         this.status = StatusEvento.PUBLISHED;
     }
@@ -118,15 +123,18 @@ public class Evento {
     public String getMensagemCasal() { return mensagemCasal; }
     public String getMensagemFinal() { return mensagemFinal; }
     public String getMensagemAgradecimento() { return mensagemAgradecimento; }
+    public String getTokenConviteGestao() { return tokenConviteGestao; }
     public Instant getCriadoEm() { return criadoEm; }
 
     /** Reidrata os campos opcionais ao reconstruir a partir do banco. */
     public void hidratarDetalhes(String fotoUrl, String local, String mensagemCasal,
-                                 String mensagemFinal, String mensagemAgradecimento) {
+                                 String mensagemFinal, String mensagemAgradecimento,
+                                 String tokenConviteGestao) {
         this.fotoUrl = fotoUrl;
         this.local = local;
         this.mensagemCasal = mensagemCasal;
         this.mensagemFinal = mensagemFinal;
         this.mensagemAgradecimento = mensagemAgradecimento;
+        this.tokenConviteGestao = tokenConviteGestao;
     }
 }

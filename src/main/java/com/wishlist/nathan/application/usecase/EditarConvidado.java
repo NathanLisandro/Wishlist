@@ -20,14 +20,14 @@ import java.util.UUID;
 @Service
 public class EditarConvidado {
 
-    private final EventoRepositorioPort eventos;
+    private final AcessoEvento acessoEvento;
     private final ConvidadoRepositorioPort convidados;
     private final CriptografiaPort cripto;
     private final HmacPort hmac;
 
-    public EditarConvidado(EventoRepositorioPort eventos, ConvidadoRepositorioPort convidados,
+    public EditarConvidado(AcessoEvento acessoEvento, ConvidadoRepositorioPort convidados,
                            CriptografiaPort cripto, HmacPort hmac) {
-        this.eventos = eventos;
+        this.acessoEvento = acessoEvento;
         this.convidados = convidados;
         this.cripto = cripto;
         this.hmac = hmac;
@@ -35,9 +35,7 @@ public class EditarConvidado {
 
     @Transactional
     public void executar(UUID contaId, UUID eventoId, UUID convidadoId, Comando cmd) {
-        Evento evento = eventos.buscarPorId(eventoId)
-                .filter(e -> e.getContaId().equals(contaId))
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Evento não encontrado"));
+        Evento evento = acessoEvento.exigir(contaId, eventoId);
         Convidado atual = convidados.buscarPorId(convidadoId)
                 .filter(c -> c.getEventoId().equals(evento.getId()))
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Convidado não encontrado"));

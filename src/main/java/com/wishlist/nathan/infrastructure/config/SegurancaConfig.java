@@ -47,6 +47,8 @@ public class SegurancaConfig {
                         .requestMatchers(HttpMethod.POST, "/auth/register", "/auth/login", "/auth/verify-email").permitAll()
                         .requestMatchers(HttpMethod.GET, "/public/events/*").permitAll()
                         .requestMatchers(HttpMethod.POST, "/public/events/*/guest-session").permitAll()
+                        // Prévia pública do convite de co-gestão (o token é o segredo)
+                        .requestMatchers(HttpMethod.GET, "/manage-invites/*").permitAll()
                         .requestMatchers("/webhooks/**").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
                         // Fotos servidas estaticamente (foto do casal na landing)

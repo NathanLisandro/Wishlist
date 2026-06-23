@@ -17,19 +17,17 @@ import java.util.UUID;
 @Service
 public class RemoverConvidado {
 
-    private final EventoRepositorioPort eventos;
+    private final AcessoEvento acessoEvento;
     private final ConvidadoRepositorioPort convidados;
 
-    public RemoverConvidado(EventoRepositorioPort eventos, ConvidadoRepositorioPort convidados) {
-        this.eventos = eventos;
+    public RemoverConvidado(AcessoEvento acessoEvento, ConvidadoRepositorioPort convidados) {
+        this.acessoEvento = acessoEvento;
         this.convidados = convidados;
     }
 
     @Transactional
     public void executar(UUID contaId, UUID eventoId, UUID convidadoId) {
-        Evento evento = eventos.buscarPorId(eventoId)
-                .filter(e -> e.getContaId().equals(contaId))
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Evento não encontrado"));
+        Evento evento = acessoEvento.exigir(contaId, eventoId);
         Convidado convidado = convidados.buscarPorId(convidadoId)
                 .filter(c -> c.getEventoId().equals(evento.getId()))
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Convidado não encontrado"));

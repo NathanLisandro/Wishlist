@@ -19,22 +19,20 @@ import java.util.UUID;
 @Service
 public class ListarPresentesAdmin {
 
-    private final EventoRepositorioPort eventos;
+    private final AcessoEvento acessoEvento;
     private final ItemPresenteRepositorioPort itens;
     private final ReservaPresenteRepositorioPort reservas;
 
-    public ListarPresentesAdmin(EventoRepositorioPort eventos, ItemPresenteRepositorioPort itens,
+    public ListarPresentesAdmin(AcessoEvento acessoEvento, ItemPresenteRepositorioPort itens,
                                 ReservaPresenteRepositorioPort reservas) {
-        this.eventos = eventos;
+        this.acessoEvento = acessoEvento;
         this.itens = itens;
         this.reservas = reservas;
     }
 
     @Transactional(readOnly = true)
     public List<ItemAdmin> executar(UUID contaId, UUID eventoId) {
-        Evento evento = eventos.buscarPorId(eventoId)
-                .filter(e -> e.getContaId().equals(contaId))
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Evento não encontrado"));
+        Evento evento = acessoEvento.exigir(contaId, eventoId);
         return itens.listarDoEvento(evento.getId()).stream().map(this::montar).toList();
     }
 

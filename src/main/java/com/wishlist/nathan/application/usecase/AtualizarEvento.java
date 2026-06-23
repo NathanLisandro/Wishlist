@@ -15,16 +15,16 @@ import java.util.UUID;
 public class AtualizarEvento {
 
     private final EventoRepositorioPort eventos;
+    private final AcessoEvento acessoEvento;
 
-    public AtualizarEvento(EventoRepositorioPort eventos) {
+    public AtualizarEvento(EventoRepositorioPort eventos, AcessoEvento acessoEvento) {
         this.eventos = eventos;
+        this.acessoEvento = acessoEvento;
     }
 
     @Transactional
     public void executar(UUID contaId, UUID eventoId, Comando cmd) {
-        Evento evento = eventos.buscarPorId(eventoId)
-                .filter(e -> e.getContaId().equals(contaId))
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Evento não encontrado"));
+        Evento evento = acessoEvento.exigir(contaId, eventoId);
         evento.editar(cmd.nome(), cmd.descricao(), cmd.dataEvento(), cmd.local(), cmd.mensagemCasal(),
                 cmd.mensagemFinal(), cmd.mensagemAgradecimento(), cmd.rsvpHabilitado(), cmd.prazoRsvp(),
                 cmd.presenteDinheiroHabilitado());

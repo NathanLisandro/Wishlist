@@ -13,19 +13,17 @@ import java.util.UUID;
 @Service
 public class RemoverTodosPresentes {
 
-    private final EventoRepositorioPort eventos;
+    private final AcessoEvento acessoEvento;
     private final ItemPresenteRepositorioPort itens;
 
-    public RemoverTodosPresentes(EventoRepositorioPort eventos, ItemPresenteRepositorioPort itens) {
-        this.eventos = eventos;
+    public RemoverTodosPresentes(AcessoEvento acessoEvento, ItemPresenteRepositorioPort itens) {
+        this.acessoEvento = acessoEvento;
         this.itens = itens;
     }
 
     @Transactional
     public long executar(UUID contaId, UUID eventoId) {
-        Evento evento = eventos.buscarPorId(eventoId)
-                .filter(e -> e.getContaId().equals(contaId))
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Evento não encontrado"));
+        Evento evento = acessoEvento.exigir(contaId, eventoId);
         return itens.apagarPorEvento(evento.getId());
     }
 }

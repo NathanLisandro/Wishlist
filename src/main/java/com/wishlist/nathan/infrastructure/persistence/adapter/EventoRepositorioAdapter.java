@@ -39,6 +39,7 @@ public class EventoRepositorioAdapter implements EventoRepositorioPort {
         jpa.setCoupleMessage(evento.getMensagemCasal());
         jpa.setClosingMessage(evento.getMensagemFinal());
         jpa.setThankYouMessage(evento.getMensagemAgradecimento());
+        jpa.setManageInviteToken(evento.getTokenConviteGestao());
         return paraDominio(repo.save(jpa));
     }
 
@@ -53,8 +54,21 @@ public class EventoRepositorioAdapter implements EventoRepositorioPort {
     }
 
     @Override
+    public Optional<Evento> buscarPorTokenConviteGestao(String token) {
+        return repo.findFirstByManageInviteToken(token).map(this::paraDominio);
+    }
+
+    @Override
     public List<Evento> listarPorConta(UUID contaId) {
         return repo.findByAccountId(contaId).stream().map(this::paraDominio).toList();
+    }
+
+    @Override
+    public List<Evento> listarPorIds(java.util.Collection<UUID> ids) {
+        if (ids.isEmpty()) {
+            return List.of();
+        }
+        return repo.findByIdIn(ids).stream().map(this::paraDominio).toList();
     }
 
     @Override
@@ -67,7 +81,7 @@ public class EventoRepositorioAdapter implements EventoRepositorioPort {
                 j.getName(), j.getDescription(), j.getEventDate(), j.isRsvpEnabled(),
                 j.getRsvpDeadline(), j.isMoneyGiftEnabled(), j.getStatus(), j.getCreatedAt());
         evento.hidratarDetalhes(j.getPhotoUrl(), j.getLocation(), j.getCoupleMessage(),
-                j.getClosingMessage(), j.getThankYouMessage());
+                j.getClosingMessage(), j.getThankYouMessage(), j.getManageInviteToken());
         return evento;
     }
 }

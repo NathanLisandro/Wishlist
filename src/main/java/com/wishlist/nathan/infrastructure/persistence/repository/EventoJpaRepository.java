@@ -11,7 +11,11 @@ public interface EventoJpaRepository extends JpaRepository<EventoJpa, UUID> {
 
     Optional<EventoJpa> findFirstBySlug(String slug);
 
+    Optional<EventoJpa> findFirstByManageInviteToken(String manageInviteToken);
+
     List<EventoJpa> findByAccountId(UUID accountId);
+
+    List<EventoJpa> findByIdIn(java.util.Collection<UUID> ids);
 
     boolean existsByAccountIdAndSlug(UUID accountId, String slug);
 }

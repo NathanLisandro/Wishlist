@@ -21,19 +21,17 @@ import java.util.UUID;
 @Service
 public class AdicionarPresente {
 
-    private final EventoRepositorioPort eventos;
+    private final AcessoEvento acessoEvento;
     private final ItemPresenteRepositorioPort itens;
 
-    public AdicionarPresente(EventoRepositorioPort eventos, ItemPresenteRepositorioPort itens) {
-        this.eventos = eventos;
+    public AdicionarPresente(AcessoEvento acessoEvento, ItemPresenteRepositorioPort itens) {
+        this.acessoEvento = acessoEvento;
         this.itens = itens;
     }
 
     @Transactional
     public UUID executar(UUID contaId, UUID eventoId, Comando cmd) {
-        Evento evento = eventos.buscarPorId(eventoId)
-                .filter(e -> e.getContaId().equals(contaId))
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Evento não encontrado"));
+        Evento evento = acessoEvento.exigir(contaId, eventoId);
         String naturalKey = chaveNatural(cmd.nome(), cmd.variante());
         ItemPresente item = new ItemPresente(null, evento.getId(), cmd.nome(), cmd.variante(),
                 new Quantidade(cmd.quantidade()), cmd.linkProduto(), cmd.imagemUrl(),

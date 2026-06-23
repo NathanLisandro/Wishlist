@@ -26,22 +26,20 @@ import java.util.UUID;
 @Service
 public class EditarPresente {
 
-    private final EventoRepositorioPort eventos;
+    private final AcessoEvento acessoEvento;
     private final ItemPresenteRepositorioPort itens;
     private final ReservaPresenteRepositorioPort reservas;
 
-    public EditarPresente(EventoRepositorioPort eventos, ItemPresenteRepositorioPort itens,
+    public EditarPresente(AcessoEvento acessoEvento, ItemPresenteRepositorioPort itens,
                           ReservaPresenteRepositorioPort reservas) {
-        this.eventos = eventos;
+        this.acessoEvento = acessoEvento;
         this.itens = itens;
         this.reservas = reservas;
     }
 
     @Transactional
     public void executar(UUID contaId, UUID eventoId, UUID presenteId, Comando cmd) {
-        Evento evento = eventos.buscarPorId(eventoId)
-                .filter(e -> e.getContaId().equals(contaId))
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Evento não encontrado"));
+        Evento evento = acessoEvento.exigir(contaId, eventoId);
         ItemPresente atual = itens.buscarPorId(presenteId)
                 .filter(p -> p.getEventoId().equals(evento.getId()))
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Presente não encontrado"));
