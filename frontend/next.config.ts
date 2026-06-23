@@ -7,7 +7,9 @@ import type { NextConfig } from "next";
 const BACKEND = process.env.API_INTERNAL_URL ?? "http://localhost:8080";
 
 // Prefixos servidos pelo backend Spring (e o /media das fotos).
-const PREFIXOS = ["auth", "account", "events", "public", "webhooks", "actuator", "media"];
+const PREFIXOS = [
+  "auth", "account", "events", "public", "webhooks", "actuator", "media", "manage-invites",
+];
 
 const nextConfig: NextConfig = {
   // Libera o host do túnel de teste no celular para o dev server do Next.
