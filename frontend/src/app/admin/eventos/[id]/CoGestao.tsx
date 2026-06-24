@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Users, Copy, RefreshCw, Trash2, Link2, X } from "lucide-react";
+import { Users, Copy, RefreshCw, Trash2, Link2, X, Gift } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
 import type { Colaborador } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -12,15 +12,21 @@ export function CoGestao({
   token,
   eventoId,
   tokenInicial,
+  modoSurpresaInicial,
+  onSurpresaChange,
 }: {
   token: string;
   eventoId: string;
   tokenInicial: string | null;
+  modoSurpresaInicial?: boolean;
+  onSurpresaChange?: () => void;
 }) {
   const [aberto, setAberto] = useState(false);
   const [conviteToken, setConviteToken] = useState<string | null>(tokenInicial);
   const [colaboradores, setColaboradores] = useState<Colaborador[]>([]);
   const [gerando, setGerando] = useState(false);
+  const [surpresa, setSurpresa] = useState(!!modoSurpresaInicial);
+  const [salvandoSurpresa, setSalvandoSurpresa] = useState(false);
 
   const link =
     conviteToken && typeof window !== "undefined"
@@ -75,6 +81,20 @@ export function CoGestao({
   function copiar() {
     navigator.clipboard.writeText(link);
     toast.success("Link copiado!");
+  }
+
+  async function alternarSurpresa(ativo: boolean) {
+    setSalvandoSurpresa(true);
+    try {
+      await api.put(`/events/${eventoId}/surprise`, { ativo }, token);
+      setSurpresa(ativo);
+      toast.success(ativo ? "Modo surpresa ligado!" : "Modo surpresa desligado.");
+      onSurpresaChange?.();
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : "Erro ao alterar o modo surpresa");
+    } finally {
+      setSalvandoSurpresa(false);
+    }
   }
 
   return (
@@ -180,6 +200,41 @@ export function CoGestao({
               </ul>
             )}
           </div>
+
+          {/* Modo surpresa */}
+          <button
+            type="button"
+            onClick={() => alternarSurpresa(!surpresa)}
+            disabled={salvandoSurpresa}
+            className={
+              "flex w-full cursor-pointer items-center justify-between gap-3 rounded-xl border p-3 text-left transition-colors " +
+              (surpresa ? "border-lilac-line bg-lilac" : "border-border bg-white")
+            }
+          >
+            <span className="flex items-start gap-2">
+              <Gift className="mt-0.5 size-4 flex-none text-plum" />
+              <span>
+                <span className="block text-sm font-medium">Modo surpresa</span>
+                <span className="block text-xs text-muted-foreground">
+                  Só o co-gestor mexe nos presentes. Você (dono) não vê a lista — para ser
+                  surpreendido(a). Precisa de um co-gestor pelo link acima.
+                </span>
+              </span>
+            </span>
+            <span
+              className={
+                "relative h-6 w-10 flex-none rounded-full transition-colors " +
+                (surpresa ? "brand-gradient" : "bg-muted-foreground/30")
+              }
+            >
+              <span
+                className={
+                  "absolute top-0.5 size-5 rounded-full bg-white shadow transition-all " +
+                  (surpresa ? "left-[18px]" : "left-0.5")
+                }
+              />
+            </span>
+          </button>
 
           <Button variant="outline" className="h-11 w-full" onClick={() => setAberto(false)}>
             Fechar

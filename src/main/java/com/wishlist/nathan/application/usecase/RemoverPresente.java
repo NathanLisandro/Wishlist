@@ -32,7 +32,7 @@ public class RemoverPresente {
 
     @Transactional
     public void executar(UUID contaId, UUID eventoId, UUID presenteId) {
-        Evento evento = acessoEvento.exigir(contaId, eventoId);
+        Evento evento = acessoEvento.exigirGestaoPresentes(contaId, eventoId);
         ItemPresente item = itens.buscarPorId(presenteId)
                 .filter(p -> p.getEventoId().equals(evento.getId()))
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Presente não encontrado"));

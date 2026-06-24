@@ -31,13 +31,13 @@ public class ListarPresentesAdmin {
 
     @Transactional(readOnly = true)
     public List<ItemAdmin> executar(UUID contaId, UUID eventoId) {
-        Evento evento = acessoEvento.exigir(contaId, eventoId);
+        Evento evento = acessoEvento.exigirGestaoPresentes(contaId, eventoId);
         return itens.listarDoEvento(evento.getId()).stream().map(this::montar).toList();
     }
 
     @Transactional(readOnly = true)
     public Pagina<ItemAdmin> executarPaginado(UUID contaId, UUID eventoId, int page, int size) {
-        Evento evento = acessoEvento.exigir(contaId, eventoId);
+        Evento evento = acessoEvento.exigirGestaoPresentes(contaId, eventoId);
         return itens.listarDoEventoPaginado(evento.getId(), page, size).mapear(this::montar);
     }
 

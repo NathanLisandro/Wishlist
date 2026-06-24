@@ -25,6 +25,7 @@ ext {
 	jjwtVersion = '0.13.0'
 	bucket4jVersion = '8.19.0'
 	testcontainersVersion = '2.0.5'
+	anthropicVersion = '2.34.0'
 }
 
 dependencyManagement {
@@ -58,6 +59,9 @@ dependencies {
 
 	// Pagamentos — Mercado Pago (usado em fase posterior)
 	implementation "com.mercadopago:sdk-java:${mercadoPagoVersion}"
+
+	// IA — SDK oficial da Anthropic (extração de lista de presentes + estimativa de preço)
+	implementation "com.anthropic:anthropic-java:${anthropicVersion}"
 
 	// JWT (sessão admin/convidado)
 	implementation "io.jsonwebtoken:jjwt-api:${jjwtVersion}"

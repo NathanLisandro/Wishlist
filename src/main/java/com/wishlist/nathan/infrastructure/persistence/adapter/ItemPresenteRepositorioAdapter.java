@@ -2,6 +2,7 @@ package com.wishlist.nathan.infrastructure.persistence.adapter;
 
 import com.wishlist.nathan.application.dto.Pagina;
 import com.wishlist.nathan.application.port.ItemPresenteRepositorioPort;
+import com.wishlist.nathan.domain.comum.Dinheiro;
 import com.wishlist.nathan.domain.comum.Quantidade;
 import com.wishlist.nathan.domain.presente.ItemPresente;
 import com.wishlist.nathan.domain.presente.StatusPresente;
@@ -37,6 +38,7 @@ public class ItemPresenteRepositorioAdapter implements ItemPresenteRepositorioPo
         jpa.setImageUrl(item.getImagemUrl());
         jpa.setStatus(item.getStatus());
         jpa.setNaturalKey(item.getNaturalKey());
+        jpa.setEstimatedPrice(item.getPrecoEstimado() != null ? item.getPrecoEstimado().valor() : null);
         return paraDominio(repo.save(jpa));
     }
 
@@ -81,8 +83,12 @@ public class ItemPresenteRepositorioAdapter implements ItemPresenteRepositorioPo
     }
 
     private ItemPresente paraDominio(ItemPresenteJpa j) {
-        return new ItemPresente(j.getId(), j.getEventId(), j.getName(), j.getVariant(),
+        ItemPresente item = new ItemPresente(j.getId(), j.getEventId(), j.getName(), j.getVariant(),
                 new Quantidade(j.getTotalQuantity()), j.getProductLink(), j.getImageUrl(),
                 j.getStatus(), j.getNaturalKey(), j.getCreatedAt());
+        if (j.getEstimatedPrice() != null) {
+            item.definirPrecoEstimado(Dinheiro.reais(j.getEstimatedPrice()));
+        }
+        return item;
     }
 }

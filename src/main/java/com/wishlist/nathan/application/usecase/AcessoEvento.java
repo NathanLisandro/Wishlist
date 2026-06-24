@@ -38,4 +38,18 @@ public class AcessoEvento {
         return evento.getContaId().equals(contaId)
                 || colaboradores.existe(evento.getId(), contaId);
     }
+
+    /**
+     * Acesso para GERENCIAR PRESENTES. Igual a {@link #exigir} (dono ou co-gestor),
+     * exceto quando o modo surpresa está ligado: aí o DONO é bloqueado (404), de modo
+     * que só o co-gestor (terceiro) mexe na lista. Co-gestor passa nos dois modos.
+     */
+    public Evento exigirGestaoPresentes(UUID contaId, UUID eventoId) {
+        Evento evento = exigir(contaId, eventoId);
+        boolean dono = evento.getContaId().equals(contaId);
+        if (evento.isModoSurpresa() && dono) {
+            throw new RecursoNaoEncontradoException("Evento não encontrado");
+        }
+        return evento;
+    }
 }

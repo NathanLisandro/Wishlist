@@ -11,6 +11,7 @@ import lombok.Setter;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -48,6 +49,9 @@ public class ItemPresenteJpa {
 
     @Column(name = "natural_key", nullable = false)
     private String naturalKey;
+
+    @Column(name = "estimated_price")
+    private BigDecimal estimatedPrice;
 
     @Column(name = "created_at", insertable = false, updatable = false)
     private Instant createdAt;

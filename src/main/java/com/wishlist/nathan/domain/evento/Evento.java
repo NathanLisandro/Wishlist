@@ -34,6 +34,7 @@ public class Evento {
     private String fundoUrl;          // imagem de fundo do site (opcional)
     private Integer fundoOverlay;     // opacidade do overlay sobre o fundo, 0..100 (opcional)
     private EstiloAnimacao estiloAnimacao = EstiloAnimacao.SUAVE; // animação de entrada
+    private boolean modoSurpresa;     // só o co-gestor mexe nos presentes (dono não vê)
     private final Instant criadoEm;
 
     public Evento(UUID id, UUID contaId, short categoriaId, Slug slug, String nome, String descricao,
@@ -103,6 +104,11 @@ public class Evento {
         this.fundoUrl = fundoUrl;
     }
 
+    /** Liga/desliga o modo surpresa (só o dono pode alternar). */
+    public void definirModoSurpresa(boolean ativo) {
+        this.modoSurpresa = ativo;
+    }
+
     public void definirTokenConviteGestao(String token) {
         this.tokenConviteGestao = token;
     }
@@ -149,6 +155,7 @@ public class Evento {
     public String getFundoUrl() { return fundoUrl; }
     public Integer getFundoOverlay() { return fundoOverlay; }
     public EstiloAnimacao getEstiloAnimacao() { return estiloAnimacao; }
+    public boolean isModoSurpresa() { return modoSurpresa; }
     public Instant getCriadoEm() { return criadoEm; }
 
     /** Reidrata os campos opcionais ao reconstruir a partir do banco. */

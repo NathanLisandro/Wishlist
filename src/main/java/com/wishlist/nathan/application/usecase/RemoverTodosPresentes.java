@@ -23,7 +23,7 @@ public class RemoverTodosPresentes {
 
     @Transactional
     public long executar(UUID contaId, UUID eventoId) {
-        Evento evento = acessoEvento.exigir(contaId, eventoId);
+        Evento evento = acessoEvento.exigirGestaoPresentes(contaId, eventoId);
         return itens.apagarPorEvento(evento.getId());
     }
 }

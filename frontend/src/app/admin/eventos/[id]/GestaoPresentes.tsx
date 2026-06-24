@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Pencil, Plus, Trash2, Upload, Download, ExternalLink, Camera } from "lucide-react";
+import {
+  Pencil, Plus, Trash2, Upload, Download, ExternalLink, Camera, TrendingUp,
+} from "lucide-react";
 import { api, ApiError, API_BASE, mediaUrl } from "@/lib/api";
 import type { ItemAdmin, ImportResultado, Pagina } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -12,6 +14,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Modal } from "@/components/Modal";
 import { GiftPlaceholder } from "@/components/GiftPlaceholder";
 import { Paginacao } from "@/components/Paginacao";
+import { ImportarComIa } from "./ImportarComIa";
 
 type Form = {
   id?: string;
@@ -29,10 +32,12 @@ export function GestaoPresentes({
   token,
   eventoId,
   onExpirado,
+  dono,
 }: {
   token: string;
   eventoId: string;
   onExpirado: () => void;
+  dono?: boolean;
 }) {
   const [itens, setItens] = useState<ItemAdmin[]>([]);
   const [total, setTotal] = useState(0);
@@ -162,6 +167,7 @@ export function GestaoPresentes({
               <Trash2 className="size-4" /> Excluir todos
             </Button>
           )}
+          <ImportarComIa token={token} eventoId={eventoId} onConcluir={carregar} />
           <Button
             onClick={() => setForm({ ...VAZIO })}
             className="brand-gradient h-10 border-0 text-white hover:opacity-95"
@@ -170,6 +176,8 @@ export function GestaoPresentes({
           </Button>
         </div>
       </div>
+
+      {dono && <TicketMedio token={token} eventoId={eventoId} reloadKey={total} />}
 
       {carregando ? (
         <p className="py-8 text-center text-muted-foreground">Carregando...</p>
@@ -428,6 +436,52 @@ export function GestaoPresentes({
         </div>
       </Modal>
     </div>
+  );
+}
+
+function TicketMedio({
+  token,
+  eventoId,
+  reloadKey,
+}: {
+  token: string;
+  eventoId: string;
+  reloadKey: number;
+}) {
+  const [dados, setDados] = useState<{ ticketMedio: number | null; itensComPreco: number } | null>(
+    null,
+  );
+
+  useEffect(() => {
+    api
+      .get<{ ticketMedio: number | null; itensComPreco: number }>(
+        `/events/${eventoId}/average-ticket`,
+        token,
+      )
+      .then(setDados)
+      .catch(() => setDados(null));
+  }, [eventoId, token, reloadKey]);
+
+  if (!dados || dados.itensComPreco === 0 || dados.ticketMedio == null) return null;
+  const fmt = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
+    dados.ticketMedio,
+  );
+
+  return (
+    <Card className="rounded-2xl border-border bg-lilac/40">
+      <CardContent className="flex items-center gap-3 p-4">
+        <span className="grid size-10 flex-none place-items-center rounded-xl bg-white text-plum">
+          <TrendingUp className="size-5" />
+        </span>
+        <div>
+          <p className="text-xs text-muted-foreground">Ticket médio estimado (só você vê)</p>
+          <p className="text-lg font-semibold text-plum">{fmt}</p>
+          <p className="text-xs text-muted-foreground">
+            com base em {dados.itensComPreco} presente(s) com preço
+          </p>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 

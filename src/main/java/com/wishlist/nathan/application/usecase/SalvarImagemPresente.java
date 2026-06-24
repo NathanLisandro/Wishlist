@@ -32,7 +32,7 @@ public class SalvarImagemPresente {
 
     @Transactional
     public String executar(UUID contaId, UUID eventoId, UUID presenteId, ArquivoUpload arquivo) {
-        Evento evento = acessoEvento.exigir(contaId, eventoId);
+        Evento evento = acessoEvento.exigirGestaoPresentes(contaId, eventoId);
         ItemPresente item = itens.buscarPorId(presenteId)
                 .filter(p -> p.getEventoId().equals(evento.getId()))
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Presente não encontrado"));

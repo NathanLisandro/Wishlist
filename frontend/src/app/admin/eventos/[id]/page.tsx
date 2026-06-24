@@ -72,6 +72,8 @@ export default function GerenciarEventoPage() {
                   token={token}
                   eventoId={eventoId}
                   tokenInicial={detalhe.tokenConviteGestao}
+                  modoSurpresaInicial={detalhe.modoSurpresa}
+                  onSurpresaChange={() => carregar(token)}
                 />
               )}
               <button
@@ -106,7 +108,9 @@ export default function GerenciarEventoPage() {
       <Tabs defaultValue="visao" className="mt-6">
         <TabsList className="flex w-full flex-wrap">
           <TabsTrigger value="visao" className="cursor-pointer">Visão geral</TabsTrigger>
-          <TabsTrigger value="presentes" className="cursor-pointer">Presentes</TabsTrigger>
+          {detalhe?.podeGerenciarPresentes !== false && (
+            <TabsTrigger value="presentes" className="cursor-pointer">Presentes</TabsTrigger>
+          )}
           <TabsTrigger value="convidados" className="cursor-pointer">Convidados</TabsTrigger>
           <TabsTrigger value="personalizar" className="cursor-pointer">Personalizar</TabsTrigger>
           {detalhe?.dono && (
@@ -117,9 +121,16 @@ export default function GerenciarEventoPage() {
         <TabsContent value="visao" className="mt-5">
           <VisaoGeral token={token} eventoId={eventoId} onExpirado={expirado} />
         </TabsContent>
-        <TabsContent value="presentes" className="mt-5">
-          <GestaoPresentes token={token} eventoId={eventoId} onExpirado={expirado} />
-        </TabsContent>
+        {detalhe?.podeGerenciarPresentes !== false && (
+          <TabsContent value="presentes" className="mt-5">
+            <GestaoPresentes
+              token={token}
+              eventoId={eventoId}
+              onExpirado={expirado}
+              dono={!!detalhe?.dono}
+            />
+          </TabsContent>
+        )}
         <TabsContent value="convidados" className="mt-5">
           <GestaoConvidados token={token} eventoId={eventoId} onExpirado={expirado} />
         </TabsContent>

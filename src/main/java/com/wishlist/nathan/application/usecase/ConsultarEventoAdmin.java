@@ -21,13 +21,15 @@ public class ConsultarEventoAdmin {
     public Resultado executar(UUID contaId, UUID eventoId) {
         Evento e = acessoEvento.exigir(contaId, eventoId);
         boolean dono = e.getContaId().equals(contaId);
+        // No modo surpresa o dono não gerencia presentes (a lista é segredo p/ ele).
+        boolean podeGerenciarPresentes = !(e.isModoSurpresa() && dono);
         return new Resultado(e.getId(), e.getSlug().valor(), e.getNome(), e.getDescricao(),
                 e.getDataEvento(), e.getLocal(), e.getMensagemCasal(), e.getMensagemFinal(),
                 e.getMensagemAgradecimento(), e.isRsvpHabilitado(), e.isPresenteDinheiroHabilitado(),
                 e.getStatus().name(), e.getFotoUrl(), dono,
                 dono ? e.getTokenConviteGestao() : null, // token só p/ o dono
                 e.getPaletaTema().name(), e.getCorDestaque(), e.getFundoUrl(), e.getFundoOverlay(),
-                e.getEstiloAnimacao().name());
+                e.getEstiloAnimacao().name(), e.isModoSurpresa(), podeGerenciarPresentes);
     }
 
     public record Resultado(UUID id, String slug, String nome, String descricao, LocalDate dataEvento,
@@ -36,5 +38,5 @@ public class ConsultarEventoAdmin {
                             boolean presenteDinheiroHabilitado, String status, String fotoUrl,
                             boolean dono, String tokenConviteGestao,
                             String paletaTema, String corDestaque, String fundoUrl, Integer fundoOverlay,
-                            String estiloAnimacao) {}
+                            String estiloAnimacao, boolean modoSurpresa, boolean podeGerenciarPresentes) {}
 }

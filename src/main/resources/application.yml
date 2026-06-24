@@ -50,6 +50,11 @@ app:
     # URL pública servida estaticamente. O caminho gravado no banco é relativo.
     dir: ${STORAGE_DIR:./uploads}
     public-base: ${STORAGE_PUBLIC_BASE:/media}
+  ai:
+    # SDK da Anthropic. Sem ANTHROPIC_API_KEY a importação por IA fica indisponível.
+    api-key: ${ANTHROPIC_API_KEY:}
+    model: ${ANTHROPIC_MODEL:claude-opus-4-8}
+    habilitado: ${AI_ENABLED:true}
 
 server:
   port: ${PORT:8080}

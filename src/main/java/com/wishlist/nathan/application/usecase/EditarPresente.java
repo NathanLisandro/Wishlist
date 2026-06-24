@@ -39,7 +39,7 @@ public class EditarPresente {
 
     @Transactional
     public void executar(UUID contaId, UUID eventoId, UUID presenteId, Comando cmd) {
-        Evento evento = acessoEvento.exigir(contaId, eventoId);
+        Evento evento = acessoEvento.exigirGestaoPresentes(contaId, eventoId);
         ItemPresente atual = itens.buscarPorId(presenteId)
                 .filter(p -> p.getEventoId().equals(evento.getId()))
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Presente não encontrado"));
@@ -55,6 +55,7 @@ public class EditarPresente {
         ItemPresente editado = new ItemPresente(atual.getId(), evento.getId(), cmd.nome(), cmd.variante(),
                 new Quantidade(cmd.quantidade()), cmd.linkProduto(), cmd.imagemUrl(), status,
                 chaveNatural(cmd.nome(), cmd.variante()), atual.getCriadoEm());
+        editado.definirPrecoEstimado(atual.getPrecoEstimado()); // preserva a estimativa da IA
         try {
             itens.salvar(editado);
         } catch (DataIntegrityViolationException e) {

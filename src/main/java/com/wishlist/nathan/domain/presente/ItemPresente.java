@@ -1,6 +1,7 @@
 package com.wishlist.nathan.domain.presente;
 
 import com.wishlist.nathan.domain.comum.ChaveIdempotencia;
+import com.wishlist.nathan.domain.comum.Dinheiro;
 import com.wishlist.nathan.domain.comum.Quantidade;
 
 import java.time.Instant;
@@ -22,6 +23,7 @@ public class ItemPresente {
     private String linkProduto;
     private String imagemUrl;
     private StatusPresente status;
+    private Dinheiro precoEstimado;   // preço de mercado estimado (BRL, opcional) — só o dono vê
     private final String naturalKey; // hash p/ idempotência de import
     private final Instant criadoEm;
 
@@ -88,6 +90,11 @@ public class ItemPresente {
         this.imagemUrl = imagemUrl;
     }
 
+    /** Define o preço de mercado estimado (BRL). Null limpa a estimativa. */
+    public void definirPrecoEstimado(Dinheiro precoEstimado) {
+        this.precoEstimado = precoEstimado;
+    }
+
     public boolean disponivel() {
         return status == StatusPresente.AVAILABLE;
     }
@@ -100,6 +107,7 @@ public class ItemPresente {
     public String getLinkProduto() { return linkProduto; }
     public String getImagemUrl() { return imagemUrl; }
     public StatusPresente getStatus() { return status; }
+    public Dinheiro getPrecoEstimado() { return precoEstimado; }
     public String getNaturalKey() { return naturalKey; }
     public Instant getCriadoEm() { return criadoEm; }
 }

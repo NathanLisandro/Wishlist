@@ -5,8 +5,10 @@ import com.wishlist.nathan.application.dto.Pagina;
 import com.wishlist.nathan.application.dto.SessaoAdmin;
 import com.wishlist.nathan.application.usecase.AdicionarConvidado;
 import com.wishlist.nathan.application.usecase.AdicionarPresente;
+import com.wishlist.nathan.application.usecase.AlternarModoSurpresa;
 import com.wishlist.nathan.application.usecase.AtualizarEvento;
 import com.wishlist.nathan.application.usecase.ConsultarEventoAdmin;
+import com.wishlist.nathan.application.usecase.ConsultarTicketMedio;
 import com.wishlist.nathan.application.usecase.CriarEvento;
 import com.wishlist.nathan.application.usecase.GerarConviteGestao;
 import com.wishlist.nathan.application.usecase.ListarColaboradores;
@@ -70,6 +72,8 @@ public class EventoController {
     private final RemoverTodosPresentes removerTodosPresentes;
     private final ListarPresentesAdmin listarPresentesAdmin;
     private final SalvarImagemPresente salvarImagemPresente;
+    private final ConsultarTicketMedio consultarTicketMedio;
+    private final AlternarModoSurpresa alternarModoSurpresa;
     private final AdicionarConvidado adicionarConvidado;
     private final EditarConvidado editarConvidado;
     private final RemoverConvidado removerConvidado;
@@ -88,6 +92,7 @@ public class EventoController {
                            AdicionarPresente adicionarPresente, EditarPresente editarPresente,
                            RemoverPresente removerPresente, RemoverTodosPresentes removerTodosPresentes,
                            ListarPresentesAdmin listarPresentesAdmin, SalvarImagemPresente salvarImagemPresente,
+                           ConsultarTicketMedio consultarTicketMedio, AlternarModoSurpresa alternarModoSurpresa,
                            AdicionarConvidado adicionarConvidado, EditarConvidado editarConvidado,
                            RemoverConvidado removerConvidado, RemoverTodosConvidados removerTodosConvidados,
                            ListarConvidados listarConvidados, ImportarListaPresentes importarPresentes,
@@ -106,6 +111,8 @@ public class EventoController {
         this.removerTodosPresentes = removerTodosPresentes;
         this.listarPresentesAdmin = listarPresentesAdmin;
         this.salvarImagemPresente = salvarImagemPresente;
+        this.consultarTicketMedio = consultarTicketMedio;
+        this.alternarModoSurpresa = alternarModoSurpresa;
         this.adicionarConvidado = adicionarConvidado;
         this.editarConvidado = editarConvidado;
         this.removerConvidado = removerConvidado;
@@ -207,6 +214,15 @@ public class EventoController {
         return Map.of("fundoUrl", url);
     }
 
+    /** Liga/desliga o modo surpresa (só o dono). */
+    @PutMapping("/{eventoId}/surprise")
+    public ResponseEntity<Void> alternarSurpresa(@AuthenticationPrincipal SessaoAdmin sessao,
+                                                 @PathVariable UUID eventoId,
+                                                 @RequestBody SurpresaRequest req) {
+        alternarModoSurpresa.executar(sessao.contaId(), eventoId, req.ativo());
+        return ResponseEntity.noContent().build();
+    }
+
     // ---- Presentes (gestão) ----
 
     @GetMapping("/{eventoId}/gifts")
@@ -255,6 +271,13 @@ public class EventoController {
                                                     @RequestParam("file") MultipartFile arquivo) {
         String url = salvarImagemPresente.executar(sessao.contaId(), eventoId, presenteId, arquivoUpload(arquivo));
         return Map.of("imagemUrl", url);
+    }
+
+    /** Ticket médio dos presentes (média dos preços estimados) — só o dono. */
+    @GetMapping("/{eventoId}/average-ticket")
+    public ConsultarTicketMedio.Resultado ticketMedio(@AuthenticationPrincipal SessaoAdmin sessao,
+                                                      @PathVariable UUID eventoId) {
+        return consultarTicketMedio.executar(sessao.contaId(), eventoId);
     }
 
     // ---- Convidados ----
@@ -356,6 +379,8 @@ public class EventoController {
                                          Instant prazoRsvp, boolean presenteDinheiroHabilitado) {}
 
     public record TemaRequest(String paleta, String corDestaque, Integer overlay, String estiloAnimacao) {}
+
+    public record SurpresaRequest(boolean ativo) {}
 
     public record PresenteRequest(@NotBlank String nome, String variante, @Positive int quantidade,
                                   String linkProduto, String imagemUrl) {}

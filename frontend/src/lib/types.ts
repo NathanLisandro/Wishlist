@@ -93,6 +93,8 @@ export type EventoDetalhe = {
   fundoUrl: string | null;
   fundoOverlay: number | null;
   estiloAnimacao: string;
+  modoSurpresa: boolean;
+  podeGerenciarPresentes: boolean;
 };
 
 export type EventoResumo = {
@@ -134,6 +136,14 @@ export type ImportResultado = {
   total: number;
   ok: number;
   falhas: number;
+};
+
+export type ItemExtraido = {
+  nome: string;
+  variante: string | null;
+  quantidade: number | null;
+  linkProduto: string | null;
+  precoEstimado: number | null;
 };
 
 export type DashboardAcesso = {

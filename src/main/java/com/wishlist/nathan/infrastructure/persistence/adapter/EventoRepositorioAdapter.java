@@ -45,6 +45,7 @@ public class EventoRepositorioAdapter implements EventoRepositorioPort {
         jpa.setBackgroundUrl(evento.getFundoUrl());
         jpa.setBackgroundOverlay(evento.getFundoOverlay() != null ? evento.getFundoOverlay().shortValue() : null);
         jpa.setAnimationStyle(evento.getEstiloAnimacao() != null ? evento.getEstiloAnimacao().name() : null);
+        jpa.setSurpriseMode(evento.isModoSurpresa());
         return paraDominio(repo.save(jpa));
     }
 
@@ -90,6 +91,7 @@ public class EventoRepositorioAdapter implements EventoRepositorioPort {
         evento.hidratarTema(j.getThemePalette(), j.getAccentColor(), j.getBackgroundUrl(),
                 j.getBackgroundOverlay() != null ? j.getBackgroundOverlay().intValue() : null,
                 j.getAnimationStyle());
+        evento.definirModoSurpresa(j.isSurpriseMode());
         return evento;
     }
 }

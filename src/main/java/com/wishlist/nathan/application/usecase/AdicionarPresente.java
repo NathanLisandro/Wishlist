@@ -31,7 +31,7 @@ public class AdicionarPresente {
 
     @Transactional
     public UUID executar(UUID contaId, UUID eventoId, Comando cmd) {
-        Evento evento = acessoEvento.exigir(contaId, eventoId);
+        Evento evento = acessoEvento.exigirGestaoPresentes(contaId, eventoId);
         String naturalKey = chaveNatural(cmd.nome(), cmd.variante());
         ItemPresente item = new ItemPresente(null, evento.getId(), cmd.nome(), cmd.variante(),
                 new Quantidade(cmd.quantidade()), cmd.linkProduto(), cmd.imagemUrl(),

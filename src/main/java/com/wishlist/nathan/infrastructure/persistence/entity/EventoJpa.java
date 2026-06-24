@@ -89,6 +89,9 @@ public class EventoJpa {
     @Column(name = "animation_style")
     private String animationStyle;
 
+    @Column(name = "surprise_mode", nullable = false)
+    private boolean surpriseMode;
+
     @Column(name = "created_at", insertable = false, updatable = false)
     private Instant createdAt;
 }
