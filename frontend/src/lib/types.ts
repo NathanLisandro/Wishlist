@@ -1,5 +1,12 @@
 // Tipos espelhando os DTOs da API (backend Spring Boot).
 
+export type Pagina<T> = {
+  itens: T[];
+  total: number;
+  page: number;
+  size: number;
+};
+
 export type EventoPublico = {
   slug: string;
   nome: string;
@@ -14,6 +21,11 @@ export type EventoPublico = {
   mensagemCasal: string | null;
   mensagemFinal: string | null;
   mensagemAgradecimento: string | null;
+  paletaTema: string;
+  corDestaque: string | null;
+  fundoUrl: string | null;
+  fundoOverlay: number | null;
+  estiloAnimacao: string;
 };
 
 export type RsvpAtual = {
@@ -76,6 +88,11 @@ export type EventoDetalhe = {
   fotoUrl: string | null;
   dono: boolean;
   tokenConviteGestao: string | null;
+  paletaTema: string;
+  corDestaque: string | null;
+  fundoUrl: string | null;
+  fundoOverlay: number | null;
+  estiloAnimacao: string;
 };
 
 export type EventoResumo = {

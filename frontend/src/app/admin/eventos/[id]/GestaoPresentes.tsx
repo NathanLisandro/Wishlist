@@ -2,15 +2,16 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Pencil, Plus, Trash2, Upload, Download, ExternalLink } from "lucide-react";
+import { Pencil, Plus, Trash2, Upload, Download, ExternalLink, Camera } from "lucide-react";
 import { api, ApiError, API_BASE, mediaUrl } from "@/lib/api";
-import type { ItemAdmin, ImportResultado } from "@/lib/types";
+import type { ItemAdmin, ImportResultado, Pagina } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Modal } from "@/components/Modal";
 import { GiftPlaceholder } from "@/components/GiftPlaceholder";
+import { Paginacao } from "@/components/Paginacao";
 
 type Form = {
   id?: string;
@@ -22,6 +23,7 @@ type Form = {
 };
 
 const VAZIO: Form = { nome: "", variante: "", quantidade: 1, linkProduto: "", imagemUrl: "" };
+const TAM_PAGINA = 20;
 
 export function GestaoPresentes({
   token,
@@ -33,22 +35,31 @@ export function GestaoPresentes({
   onExpirado: () => void;
 }) {
   const [itens, setItens] = useState<ItemAdmin[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(0);
   const [carregando, setCarregando] = useState(true);
   const [form, setForm] = useState<Form | null>(null);
   const [salvando, setSalvando] = useState(false);
   const [remover, setRemover] = useState<ItemAdmin | null>(null);
   const [removerTodos, setRemoverTodos] = useState(false);
+  const imgRef = useRef<HTMLInputElement>(null);
+  const [enviandoImg, setEnviandoImg] = useState(false);
 
   const carregar = useCallback(async () => {
     try {
-      setItens(await api.get<ItemAdmin[]>(`/events/${eventoId}/gifts`, token));
+      const p = await api.get<Pagina<ItemAdmin>>(
+        `/events/${eventoId}/gifts?page=${page}&size=${TAM_PAGINA}`,
+        token,
+      );
+      setItens(p.itens);
+      setTotal(p.total);
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) return onExpirado();
       toast.error("Erro ao carregar presentes");
     } finally {
       setCarregando(false);
     }
-  }, [eventoId, token, onExpirado]);
+  }, [eventoId, token, onExpirado, page]);
 
   useEffect(() => {
     carregar();
@@ -82,13 +93,42 @@ export function GestaoPresentes({
     }
   }
 
+  async function enviarImagem(e: React.ChangeEvent<HTMLInputElement>) {
+    const arquivo = e.target.files?.[0];
+    if (!arquivo || !form?.id) return;
+    if (arquivo.size > 8 * 1024 * 1024) {
+      toast.error("Imagem muito grande (máx. 8MB).");
+      return;
+    }
+    const fd = new FormData();
+    fd.append("file", arquivo);
+    setEnviandoImg(true);
+    try {
+      const r = await api.upload<{ imagemUrl: string }>(
+        `/events/${eventoId}/gifts/${form.id}/image`,
+        fd,
+        token,
+      );
+      setForm((f) => (f ? { ...f, imagemUrl: r.imagemUrl } : f));
+      toast.success("Imagem atualizada!");
+      await carregar();
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : "Falha ao enviar a imagem");
+    } finally {
+      setEnviandoImg(false);
+      if (imgRef.current) imgRef.current.value = "";
+    }
+  }
+
   async function confirmarRemover() {
     if (!remover) return;
     try {
       await api.del(`/events/${eventoId}/gifts/${remover.id}`, token);
       toast.success("Presente removido.");
+      const voltarPagina = itens.length === 1 && page > 0;
       setRemover(null);
-      await carregar();
+      if (voltarPagina) setPage((p) => p - 1);
+      else await carregar();
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : "Erro ao remover");
     }
@@ -99,7 +139,8 @@ export function GestaoPresentes({
       const r = await api.del<{ removidos: number }>(`/events/${eventoId}/gifts`, token);
       toast.success(`${r?.removidos ?? 0} presente(s) removido(s).`);
       setRemoverTodos(false);
-      await carregar();
+      if (page === 0) await carregar();
+      else setPage(0);
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : "Erro ao limpar a lista");
     }
@@ -109,10 +150,10 @@ export function GestaoPresentes({
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">
-          {itens.length} presente(s) na lista.
+          {total} presente(s) na lista.
         </p>
         <div className="flex gap-2">
-          {itens.length > 0 && (
+          {total > 0 && (
             <Button
               variant="outline"
               onClick={() => setRemoverTodos(true)}
@@ -132,7 +173,7 @@ export function GestaoPresentes({
 
       {carregando ? (
         <p className="py-8 text-center text-muted-foreground">Carregando...</p>
-      ) : itens.length === 0 ? (
+      ) : total === 0 ? (
         <ImportarPresentes token={token} eventoId={eventoId} onConcluir={carregar} vazio />
       ) : (
         <>
@@ -213,6 +254,7 @@ export function GestaoPresentes({
               );
             })}
           </div>
+          <Paginacao page={page} total={total} tam={TAM_PAGINA} onPage={setPage} />
           <ImportarPresentes token={token} eventoId={eventoId} onConcluir={carregar} />
         </>
       )}
@@ -277,6 +319,39 @@ export function GestaoPresentes({
                 value={form.imagemUrl}
                 onChange={(e) => setForm({ ...form, imagemUrl: e.target.value })}
               />
+              {form.id ? (
+                <div className="flex items-center gap-3 pt-1">
+                  <div className="size-14 flex-none overflow-hidden rounded-xl border border-border">
+                    {mediaUrl(form.imagemUrl) ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={mediaUrl(form.imagemUrl)!} alt="" className="size-full object-cover" />
+                    ) : (
+                      <GiftPlaceholder className="size-full" />
+                    )}
+                  </div>
+                  <input
+                    ref={imgRef}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    className="hidden"
+                    onChange={enviarImagem}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-10"
+                    onClick={() => imgRef.current?.click()}
+                    disabled={enviandoImg}
+                  >
+                    <Camera className="size-4" /> {enviandoImg ? "Enviando..." : "Tirar/enviar foto"}
+                  </Button>
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Salve o presente para enviar uma foto pelo celular.
+                </p>
+              )}
             </div>
             <div className="flex gap-2 pt-1">
               <Button
@@ -335,7 +410,7 @@ export function GestaoPresentes({
           <div>
             <h3 className="font-serif text-2xl">Excluir todos os presentes</h3>
             <p className="mt-1 text-sm text-muted-foreground">
-              Isso apaga os <strong>{itens.length}</strong> presentes e as reservas feitas
+              Isso apaga os <strong>{total}</strong> presentes e as reservas feitas
               neles. Não dá para desfazer.
             </p>
           </div>

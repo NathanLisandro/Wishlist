@@ -1,7 +1,6 @@
 package com.wishlist.nathan.application.usecase;
 
-import com.wishlist.nathan.application.excecao.RecursoNaoEncontradoException;
-import com.wishlist.nathan.application.port.EventoRepositorioPort;
+import com.wishlist.nathan.application.dto.Pagina;
 import com.wishlist.nathan.application.port.ItemPresenteRepositorioPort;
 import com.wishlist.nathan.application.port.ReservaPresenteRepositorioPort;
 import com.wishlist.nathan.domain.evento.Evento;
@@ -34,6 +33,12 @@ public class ListarPresentesAdmin {
     public List<ItemAdmin> executar(UUID contaId, UUID eventoId) {
         Evento evento = acessoEvento.exigir(contaId, eventoId);
         return itens.listarDoEvento(evento.getId()).stream().map(this::montar).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public Pagina<ItemAdmin> executarPaginado(UUID contaId, UUID eventoId, int page, int size) {
+        Evento evento = acessoEvento.exigir(contaId, eventoId);
+        return itens.listarDoEventoPaginado(evento.getId(), page, size).mapear(this::montar);
     }
 
     private ItemAdmin montar(ItemPresente item) {

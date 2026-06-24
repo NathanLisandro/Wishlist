@@ -1,10 +1,14 @@
 package com.wishlist.nathan.infrastructure.persistence.adapter;
 
+import com.wishlist.nathan.application.dto.Pagina;
 import com.wishlist.nathan.application.port.ConvidadoRepositorioPort;
 import com.wishlist.nathan.domain.comum.NomeCriptografado;
 import com.wishlist.nathan.domain.convidado.Convidado;
 import com.wishlist.nathan.infrastructure.persistence.entity.ConvidadoJpa;
 import com.wishlist.nathan.infrastructure.persistence.repository.ConvidadoJpaRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -50,6 +54,14 @@ public class ConvidadoRepositorioAdapter implements ConvidadoRepositorioPort {
     @Override
     public List<Convidado> listarPorEvento(UUID eventoId) {
         return repo.findByEventIdOrderByCreatedAt(eventoId).stream().map(this::paraDominio).toList();
+    }
+
+    @Override
+    public Pagina<Convidado> listarPorEventoPaginado(UUID eventoId, int page, int size) {
+        Page<ConvidadoJpa> pagina = repo.findByEventId(eventoId,
+                PageRequest.of(page, size, Sort.by("createdAt")));
+        return new Pagina<>(pagina.getContent().stream().map(this::paraDominio).toList(),
+                pagina.getTotalElements(), page, size);
     }
 
     @Override

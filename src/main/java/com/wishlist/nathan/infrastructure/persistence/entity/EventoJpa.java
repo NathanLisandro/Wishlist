@@ -74,6 +74,21 @@ public class EventoJpa {
     @Column(name = "manage_invite_token")
     private String manageInviteToken;
 
+    @Column(name = "theme_palette")
+    private String themePalette;
+
+    @Column(name = "accent_color")
+    private String accentColor;
+
+    @Column(name = "background_url")
+    private String backgroundUrl;
+
+    @Column(name = "background_overlay")
+    private Short backgroundOverlay;
+
+    @Column(name = "animation_style")
+    private String animationStyle;
+
     @Column(name = "created_at", insertable = false, updatable = false)
     private Instant createdAt;
 }

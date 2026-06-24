@@ -1,11 +1,15 @@
 package com.wishlist.nathan.infrastructure.persistence.adapter;
 
+import com.wishlist.nathan.application.dto.Pagina;
 import com.wishlist.nathan.application.port.ItemPresenteRepositorioPort;
 import com.wishlist.nathan.domain.comum.Quantidade;
 import com.wishlist.nathan.domain.presente.ItemPresente;
 import com.wishlist.nathan.domain.presente.StatusPresente;
 import com.wishlist.nathan.infrastructure.persistence.entity.ItemPresenteJpa;
 import com.wishlist.nathan.infrastructure.persistence.repository.ItemPresenteJpaRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -56,6 +60,14 @@ public class ItemPresenteRepositorioAdapter implements ItemPresenteRepositorioPo
     public List<ItemPresente> listarDoEvento(UUID eventoId) {
         return repo.findByEventIdAndStatusNotOrderByCreatedAt(eventoId, StatusPresente.HIDDEN)
                 .stream().map(this::paraDominio).toList();
+    }
+
+    @Override
+    public Pagina<ItemPresente> listarDoEventoPaginado(UUID eventoId, int page, int size) {
+        Page<ItemPresenteJpa> pagina = repo.findByEventIdAndStatusNot(eventoId, StatusPresente.HIDDEN,
+                PageRequest.of(page, size, Sort.by("createdAt")));
+        return new Pagina<>(pagina.getContent().stream().map(this::paraDominio).toList(),
+                pagina.getTotalElements(), page, size);
     }
 
     @Override

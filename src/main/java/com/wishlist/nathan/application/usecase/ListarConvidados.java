@@ -1,9 +1,8 @@
 package com.wishlist.nathan.application.usecase;
 
-import com.wishlist.nathan.application.excecao.RecursoNaoEncontradoException;
+import com.wishlist.nathan.application.dto.Pagina;
 import com.wishlist.nathan.application.port.ConvidadoRepositorioPort;
 import com.wishlist.nathan.application.port.CriptografiaPort;
-import com.wishlist.nathan.application.port.EventoRepositorioPort;
 import com.wishlist.nathan.application.port.RsvpRepositorioPort;
 import com.wishlist.nathan.domain.convidado.Convidado;
 import com.wishlist.nathan.domain.evento.Evento;
@@ -38,14 +37,23 @@ public class ListarConvidados {
     @Transactional(readOnly = true)
     public List<ConvidadoPainel> executar(UUID contaId, UUID eventoId) {
         Evento evento = acessoEvento.exigir(contaId, eventoId);
+        return convidados.listarPorEvento(evento.getId()).stream()
+                .map(c -> montar(evento.getId(), c)).toList();
+    }
 
-        return convidados.listarPorEvento(evento.getId()).stream().map(c -> {
-            Rsvp rsvp = rsvps.buscarPorEventoEConvidado(evento.getId(), c.getId()).orElse(null);
-            String status = rsvp == null ? "PENDING" : rsvp.getStatus().name();
-            int acompanhantes = rsvp == null ? 0 : rsvp.getAcompanhantes().size();
-            return new ConvidadoPainel(c.getId(), nomeDe(c), decifrar(c.getTelefoneCifrado()),
-                    c.getAcompanhantesPermitidos(), status, acompanhantes);
-        }).toList();
+    @Transactional(readOnly = true)
+    public Pagina<ConvidadoPainel> executarPaginado(UUID contaId, UUID eventoId, int page, int size) {
+        Evento evento = acessoEvento.exigir(contaId, eventoId);
+        return convidados.listarPorEventoPaginado(evento.getId(), page, size)
+                .mapear(c -> montar(evento.getId(), c));
+    }
+
+    private ConvidadoPainel montar(UUID eventoId, Convidado c) {
+        Rsvp rsvp = rsvps.buscarPorEventoEConvidado(eventoId, c.getId()).orElse(null);
+        String status = rsvp == null ? "PENDING" : rsvp.getStatus().name();
+        int acompanhantes = rsvp == null ? 0 : rsvp.getAcompanhantes().size();
+        return new ConvidadoPainel(c.getId(), nomeDe(c), decifrar(c.getTelefoneCifrado()),
+                c.getAcompanhantesPermitidos(), status, acompanhantes);
     }
 
     private String nomeDe(Convidado c) {

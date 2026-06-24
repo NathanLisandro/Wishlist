@@ -2,14 +2,22 @@
 
 import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { Camera, ImageIcon, Save, ExternalLink, RefreshCw } from "lucide-react";
+import { Camera, ImageIcon, Save, ExternalLink, RefreshCw, Palette } from "lucide-react";
 import { api, ApiError, mediaUrl } from "@/lib/api";
+import { PALETAS_DISPONIVEIS, OVERLAY_PADRAO } from "@/lib/temas";
 import type { EventoDetalhe } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
+
+const ANIMACOES: { id: string; nome: string }[] = [
+  { id: "SUAVE", nome: "Suave" },
+  { id: "CASCATA", nome: "Cascata" },
+  { id: "FLUTUAR", nome: "Flutuar" },
+  { id: "NENHUMA", nome: "Nenhuma" },
+];
 
 export function Personalizacao({
   token,
@@ -24,6 +32,16 @@ export function Personalizacao({
   const fileRef = useRef<HTMLInputElement>(null);
   const [enviandoFoto, setEnviandoFoto] = useState(false);
   const [fotoUrl, setFotoUrl] = useState(detalhe.fotoUrl);
+
+  // Aparência (paleta + cor de destaque + fundo)
+  const fundoRef = useRef<HTMLInputElement>(null);
+  const [paleta, setPaleta] = useState(detalhe.paletaTema ?? "ROSE");
+  const [corDestaque, setCorDestaque] = useState(detalhe.corDestaque ?? "");
+  const [overlay, setOverlay] = useState(detalhe.fundoOverlay ?? OVERLAY_PADRAO);
+  const [animacao, setAnimacao] = useState(detalhe.estiloAnimacao ?? "SUAVE");
+  const [fundoUrl, setFundoUrl] = useState(detalhe.fundoUrl);
+  const [enviandoFundo, setEnviandoFundo] = useState(false);
+  const [salvandoTema, setSalvandoTema] = useState(false);
 
   const [nome, setNome] = useState(detalhe.nome);
   const [dataEvento, setData] = useState(detalhe.dataEvento ?? "");
@@ -64,6 +82,48 @@ export function Personalizacao({
     }
   }
 
+  async function enviarFundo(e: React.ChangeEvent<HTMLInputElement>) {
+    const arquivo = e.target.files?.[0];
+    if (!arquivo) return;
+    if (arquivo.size > 8 * 1024 * 1024) {
+      toast.error("Imagem muito grande (máx. 8MB).");
+      return;
+    }
+    const fd = new FormData();
+    fd.append("file", arquivo);
+    setEnviandoFundo(true);
+    try {
+      const r = await api.upload<{ fundoUrl: string }>(`/events/${eventoId}/background`, fd, token);
+      setFundoUrl(r.fundoUrl);
+      toast.success("Fundo atualizado!");
+      setPreviewKey((k) => k + 1);
+      onSaved();
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : "Falha ao enviar o fundo");
+    } finally {
+      setEnviandoFundo(false);
+      if (fundoRef.current) fundoRef.current.value = "";
+    }
+  }
+
+  async function salvarTema() {
+    setSalvandoTema(true);
+    try {
+      await api.put(
+        `/events/${eventoId}/theme`,
+        { paleta, corDestaque: corDestaque || null, overlay, estiloAnimacao: animacao },
+        token,
+      );
+      toast.success("Aparência salva!");
+      setPreviewKey((k) => k + 1);
+      onSaved();
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : "Erro ao salvar a aparência");
+    } finally {
+      setSalvandoTema(false);
+    }
+  }
+
   async function salvar(e: React.FormEvent) {
     e.preventDefault();
     setSalvando(true);
@@ -95,6 +155,7 @@ export function Personalizacao({
   }
 
   const foto = mediaUrl(fotoUrl);
+  const fundo = mediaUrl(fundoUrl);
 
   return (
     <div className="grid gap-5 lg:grid-cols-[1fr_360px]">
@@ -122,6 +183,7 @@ export function Personalizacao({
                   ref={fileRef}
                   type="file"
                   accept="image/*"
+                  capture="environment"
                   className="hidden"
                   onChange={enviarFoto}
                 />
@@ -137,6 +199,151 @@ export function Personalizacao({
                 </Button>
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Aparência (tema + fundo) */}
+        <Card className="rounded-2xl border-border">
+          <CardContent className="space-y-5 p-5 sm:p-6">
+            <div className="flex items-center gap-2 font-medium">
+              <Palette className="size-4 text-plum" /> Aparência do site
+            </div>
+
+            <div className="space-y-2">
+              <Label>Paleta de cores</Label>
+              <div className="flex flex-wrap gap-2">
+                {PALETAS_DISPONIVEIS.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => setPaleta(p.id)}
+                    aria-label={p.nome}
+                    aria-pressed={paleta === p.id}
+                    className={
+                      "flex items-center gap-2 rounded-xl border px-3 py-2 text-sm transition-colors " +
+                      (paleta === p.id
+                        ? "border-plum bg-lilac"
+                        : "border-border bg-white hover:bg-lilac/50")
+                    }
+                  >
+                    <span
+                      className="size-5 flex-none rounded-full"
+                      style={{ background: `linear-gradient(135deg, ${p.rose}, ${p.plum})` }}
+                    />
+                    {p.nome}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="p-accent">Cor de destaque (opcional)</Label>
+                <div className="flex items-center gap-2">
+                  <input
+                    id="p-accent"
+                    type="color"
+                    value={corDestaque || "#c7407a"}
+                    onChange={(e) => setCorDestaque(e.target.value)}
+                    className="h-11 w-14 flex-none cursor-pointer rounded-lg border border-border bg-white p-1"
+                  />
+                  <Input
+                    className="h-11"
+                    placeholder="#RRGGBB (usa a da paleta)"
+                    value={corDestaque}
+                    onChange={(e) => setCorDestaque(e.target.value)}
+                  />
+                  {corDestaque && (
+                    <Button type="button" variant="outline" className="h-11" onClick={() => setCorDestaque("")}>
+                      Limpar
+                    </Button>
+                  )}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="p-overlay">Escurecer fundo ({overlay}%)</Label>
+                <input
+                  id="p-overlay"
+                  type="range"
+                  min={0}
+                  max={100}
+                  value={overlay}
+                  onChange={(e) => setOverlay(Number(e.target.value))}
+                  className="h-11 w-full cursor-pointer accent-plum"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Deixa o texto legível sobre a imagem de fundo.
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Animação de entrada</Label>
+              <div className="flex flex-wrap gap-2">
+                {ANIMACOES.map((a) => (
+                  <button
+                    key={a.id}
+                    type="button"
+                    onClick={() => setAnimacao(a.id)}
+                    aria-pressed={animacao === a.id}
+                    className={
+                      "rounded-xl border px-3 py-2 text-sm transition-colors " +
+                      (animacao === a.id
+                        ? "border-plum bg-lilac"
+                        : "border-border bg-white hover:bg-lilac/50")
+                    }
+                  >
+                    {a.nome}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Imagem de fundo (opcional)</Label>
+              <div className="flex items-center gap-4">
+                <div className="relative grid h-20 w-32 flex-none place-items-center overflow-hidden rounded-xl border border-border bg-lilac text-muted-foreground">
+                  {fundo ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={fundo} alt="" className="size-full object-cover" />
+                  ) : (
+                    <ImageIcon className="size-6" />
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">
+                    Fica atrás de todo o site. JPG, PNG ou WEBP (máx. 8MB).
+                  </p>
+                  <input
+                    ref={fundoRef}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    className="hidden"
+                    onChange={enviarFundo}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-10"
+                    onClick={() => fundoRef.current?.click()}
+                    disabled={enviandoFundo}
+                  >
+                    <ImageIcon className="size-4" />
+                    {enviandoFundo ? "Enviando..." : fundo ? "Trocar fundo" : "Enviar fundo"}
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            <Button
+              type="button"
+              className="brand-gradient h-11 w-full border-0 text-white hover:opacity-95"
+              onClick={salvarTema}
+              disabled={salvandoTema}
+            >
+              <Save className="size-4" /> {salvandoTema ? "Salvando..." : "Salvar aparência"}
+            </Button>
           </CardContent>
         </Card>
 

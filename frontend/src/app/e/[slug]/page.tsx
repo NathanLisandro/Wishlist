@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Calendar, ImageIcon, MapPin, ArrowUpRight } from "lucide-react";
 import { api, mediaUrl } from "@/lib/api";
+import { varsDoTema, OVERLAY_PADRAO } from "@/lib/temas";
 
 /** URL absoluta da foto p/ o preview (Open Graph) — só quando NEXT_PUBLIC_SITE_URL é definido. */
 function fotoAbsoluta(fotoUrl: string | null): string | undefined {
@@ -79,10 +80,27 @@ export default async function Page({
       })
     : null;
   const foto = mediaUrl(evento.fotoUrl);
+  const fundo = mediaUrl(evento.fundoUrl);
   const quote = evento.mensagemCasal ?? evento.descricao;
+  const temaVars = varsDoTema(evento.paletaTema, evento.corDestaque);
 
   return (
-    <main className="mx-auto w-full max-w-[600px] px-5 pb-16 sm:px-6">
+    <>
+      {fundo && (
+        <div aria-hidden className="fixed inset-0 z-0">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={fundo} alt="" className="size-full object-cover" />
+          <div
+            className="absolute inset-0 bg-black"
+            style={{ opacity: (evento.fundoOverlay ?? OVERLAY_PADRAO) / 100 }}
+          />
+        </div>
+      )}
+      <main
+        data-anim={evento.estiloAnimacao.toLowerCase()}
+        style={temaVars}
+        className="relative z-10 mx-auto w-full max-w-[600px] px-5 pb-16 sm:px-6"
+      >
       {/* Herói com foto do casal (ou gradiente como fallback elegante). */}
       <section className="rise relative mt-6 flex h-[360px] items-end overflow-hidden rounded-[26px] shadow-[0_36px_70px_-34px_rgba(110,31,67,0.55)] sm:h-[380px]">
         {foto ? (
@@ -167,6 +185,7 @@ export default async function Page({
       <p className="mt-8 text-center font-serif text-lg italic text-muted-foreground">
         {evento.mensagemFinal?.trim() || "Mal podemos esperar por você."}
       </p>
-    </main>
+      </main>
+    </>
   );
 }

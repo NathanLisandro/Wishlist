@@ -3,6 +3,8 @@ package com.wishlist.nathan.infrastructure.persistence.repository;
 import com.wishlist.nathan.domain.presente.StatusPresente;
 import com.wishlist.nathan.infrastructure.persistence.entity.ItemPresenteJpa;
 import jakarta.persistence.LockModeType;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
@@ -17,6 +19,8 @@ public interface ItemPresenteJpaRepository extends JpaRepository<ItemPresenteJpa
     List<ItemPresenteJpa> findByEventIdAndStatus(UUID eventId, StatusPresente status);
 
     List<ItemPresenteJpa> findByEventIdAndStatusNotOrderByCreatedAt(UUID eventId, StatusPresente status);
+
+    Page<ItemPresenteJpa> findByEventIdAndStatusNot(UUID eventId, StatusPresente status, Pageable pageable);
 
     long deleteByEventId(UUID eventId);
 

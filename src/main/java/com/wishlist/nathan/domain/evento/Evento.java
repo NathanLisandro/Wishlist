@@ -29,6 +29,11 @@ public class Evento {
     private String mensagemFinal;    // frase de despedida no rodapé (opcional)
     private String mensagemAgradecimento; // exibida após confirmar os presentes (opcional)
     private String tokenConviteGestao;    // token do link de co-gestão (opcional)
+    private PaletaTema paletaTema = PaletaTema.ROSE; // paleta visual do site
+    private String corDestaque;       // accent #RRGGBB (opcional; sobrepõe o da paleta)
+    private String fundoUrl;          // imagem de fundo do site (opcional)
+    private Integer fundoOverlay;     // opacidade do overlay sobre o fundo, 0..100 (opcional)
+    private EstiloAnimacao estiloAnimacao = EstiloAnimacao.SUAVE; // animação de entrada
     private final Instant criadoEm;
 
     public Evento(UUID id, UUID contaId, short categoriaId, Slug slug, String nome, String descricao,
@@ -83,6 +88,21 @@ public class Evento {
         this.fotoUrl = fotoUrl;
     }
 
+    /** Aplica a personalização visual escolhida pelo casal (já validada no {@link Tema}). */
+    public void personalizarTema(Tema tema) {
+        this.paletaTema = tema.paleta();
+        this.corDestaque = tema.corDestaque();
+        if (tema.overlay() != null) {
+            this.fundoOverlay = tema.overlay();
+        }
+        this.estiloAnimacao = tema.animacao();
+    }
+
+    /** Define a imagem de fundo do site (caminho público). Null remove o fundo. */
+    public void definirFundo(String fundoUrl) {
+        this.fundoUrl = fundoUrl;
+    }
+
     public void definirTokenConviteGestao(String token) {
         this.tokenConviteGestao = token;
     }
@@ -124,6 +144,11 @@ public class Evento {
     public String getMensagemFinal() { return mensagemFinal; }
     public String getMensagemAgradecimento() { return mensagemAgradecimento; }
     public String getTokenConviteGestao() { return tokenConviteGestao; }
+    public PaletaTema getPaletaTema() { return paletaTema; }
+    public String getCorDestaque() { return corDestaque; }
+    public String getFundoUrl() { return fundoUrl; }
+    public Integer getFundoOverlay() { return fundoOverlay; }
+    public EstiloAnimacao getEstiloAnimacao() { return estiloAnimacao; }
     public Instant getCriadoEm() { return criadoEm; }
 
     /** Reidrata os campos opcionais ao reconstruir a partir do banco. */
@@ -136,5 +161,15 @@ public class Evento {
         this.mensagemFinal = mensagemFinal;
         this.mensagemAgradecimento = mensagemAgradecimento;
         this.tokenConviteGestao = tokenConviteGestao;
+    }
+
+    /** Reidrata a personalização visual ao reconstruir a partir do banco. */
+    public void hidratarTema(String paleta, String corDestaque, String fundoUrl, Integer fundoOverlay,
+                             String estiloAnimacao) {
+        this.paletaTema = PaletaTema.ofNullable(paleta);
+        this.corDestaque = corDestaque;
+        this.fundoUrl = fundoUrl;
+        this.fundoOverlay = fundoOverlay;
+        this.estiloAnimacao = EstiloAnimacao.ofNullable(estiloAnimacao);
     }
 }

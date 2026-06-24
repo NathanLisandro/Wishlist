@@ -40,6 +40,11 @@ public class EventoRepositorioAdapter implements EventoRepositorioPort {
         jpa.setClosingMessage(evento.getMensagemFinal());
         jpa.setThankYouMessage(evento.getMensagemAgradecimento());
         jpa.setManageInviteToken(evento.getTokenConviteGestao());
+        jpa.setThemePalette(evento.getPaletaTema() != null ? evento.getPaletaTema().name() : null);
+        jpa.setAccentColor(evento.getCorDestaque());
+        jpa.setBackgroundUrl(evento.getFundoUrl());
+        jpa.setBackgroundOverlay(evento.getFundoOverlay() != null ? evento.getFundoOverlay().shortValue() : null);
+        jpa.setAnimationStyle(evento.getEstiloAnimacao() != null ? evento.getEstiloAnimacao().name() : null);
         return paraDominio(repo.save(jpa));
     }
 
@@ -82,6 +87,9 @@ public class EventoRepositorioAdapter implements EventoRepositorioPort {
                 j.getRsvpDeadline(), j.isMoneyGiftEnabled(), j.getStatus(), j.getCreatedAt());
         evento.hidratarDetalhes(j.getPhotoUrl(), j.getLocation(), j.getCoupleMessage(),
                 j.getClosingMessage(), j.getThankYouMessage(), j.getManageInviteToken());
+        evento.hidratarTema(j.getThemePalette(), j.getAccentColor(), j.getBackgroundUrl(),
+                j.getBackgroundOverlay() != null ? j.getBackgroundOverlay().intValue() : null,
+                j.getAnimationStyle());
         return evento;
     }
 }

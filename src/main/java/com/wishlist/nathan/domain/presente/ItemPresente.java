@@ -83,6 +83,11 @@ public class ItemPresente {
         this.status = StatusPresente.HIDDEN;
     }
 
+    /** Define a imagem do produto (caminho público de upload ou URL externa). */
+    public void definirImagem(String imagemUrl) {
+        this.imagemUrl = imagemUrl;
+    }
+
     public boolean disponivel() {
         return status == StatusPresente.AVAILABLE;
     }

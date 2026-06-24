@@ -25,12 +25,16 @@ public class ConsultarEventoAdmin {
                 e.getDataEvento(), e.getLocal(), e.getMensagemCasal(), e.getMensagemFinal(),
                 e.getMensagemAgradecimento(), e.isRsvpHabilitado(), e.isPresenteDinheiroHabilitado(),
                 e.getStatus().name(), e.getFotoUrl(), dono,
-                dono ? e.getTokenConviteGestao() : null); // token só p/ o dono
+                dono ? e.getTokenConviteGestao() : null, // token só p/ o dono
+                e.getPaletaTema().name(), e.getCorDestaque(), e.getFundoUrl(), e.getFundoOverlay(),
+                e.getEstiloAnimacao().name());
     }
 
     public record Resultado(UUID id, String slug, String nome, String descricao, LocalDate dataEvento,
                             String local, String mensagemCasal, String mensagemFinal,
                             String mensagemAgradecimento, boolean rsvpHabilitado,
                             boolean presenteDinheiroHabilitado, String status, String fotoUrl,
-                            boolean dono, String tokenConviteGestao) {}
+                            boolean dono, String tokenConviteGestao,
+                            String paletaTema, String corDestaque, String fundoUrl, Integer fundoOverlay,
+                            String estiloAnimacao) {}
 }

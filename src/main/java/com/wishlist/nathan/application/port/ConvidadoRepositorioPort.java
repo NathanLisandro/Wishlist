@@ -1,5 +1,6 @@
 package com.wishlist.nathan.application.port;
 
+import com.wishlist.nathan.application.dto.Pagina;
 import com.wishlist.nathan.domain.convidado.Convidado;
 
 import java.util.List;
@@ -19,6 +20,9 @@ public interface ConvidadoRepositorioPort {
 
     /** Todos os convidados do evento (gestão/lista de presença no painel). */
     List<Convidado> listarPorEvento(UUID eventoId);
+
+    /** Página de convidados do evento, ordenados por criação — painel do admin. */
+    Pagina<Convidado> listarPorEventoPaginado(UUID eventoId, int page, int size);
 
     /** Remove um convidado (cascata limpa reservas/RSVP; dinheiro/acessos viram NULL). */
     void apagar(UUID id);

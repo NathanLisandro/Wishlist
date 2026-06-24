@@ -7,12 +7,15 @@ import {
 } from "lucide-react";
 import { api, ApiError, API_BASE } from "@/lib/api";
 import { formatarTelefoneBR, apenasDigitos, exibirTelefone } from "@/lib/format";
-import type { ConvidadoPainel, ImportResultado } from "@/lib/types";
+import type { ConvidadoPainel, ImportResultado, Pagina } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Modal } from "@/components/Modal";
+import { Paginacao } from "@/components/Paginacao";
+
+const TAM_PAGINA = 20;
 
 const STATUS: Record<string, { label: string; classe: string; Icon: typeof Check }> = {
   CONFIRMED: { label: "Confirmado", classe: "bg-emerald-50 text-emerald-600", Icon: Check },
@@ -39,6 +42,8 @@ export function GestaoConvidados({
   onExpirado: () => void;
 }) {
   const [convidados, setConvidados] = useState<ConvidadoPainel[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(0);
   const [carregando, setCarregando] = useState(true);
   const [form, setForm] = useState<Form | null>(null);
   const [salvando, setSalvando] = useState(false);
@@ -47,14 +52,19 @@ export function GestaoConvidados({
 
   const carregar = useCallback(async () => {
     try {
-      setConvidados(await api.get<ConvidadoPainel[]>(`/events/${eventoId}/guests`, token));
+      const p = await api.get<Pagina<ConvidadoPainel>>(
+        `/events/${eventoId}/guests?page=${page}&size=${TAM_PAGINA}`,
+        token,
+      );
+      setConvidados(p.itens);
+      setTotal(p.total);
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) return onExpirado();
       toast.error("Erro ao carregar convidados");
     } finally {
       setCarregando(false);
     }
-  }, [eventoId, token, onExpirado]);
+  }, [eventoId, token, onExpirado, page]);
 
   useEffect(() => {
     carregar();
@@ -96,8 +106,10 @@ export function GestaoConvidados({
     try {
       await api.del(`/events/${eventoId}/guests/${remover.id}`, token);
       toast.success("Convidado removido.");
+      const voltarPagina = convidados.length === 1 && page > 0;
       setRemover(null);
-      await carregar();
+      if (voltarPagina) setPage((p) => p - 1);
+      else await carregar();
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : "Erro ao remover");
     }
@@ -108,22 +120,19 @@ export function GestaoConvidados({
       const r = await api.del<{ removidos: number }>(`/events/${eventoId}/guests`, token);
       toast.success(`${r?.removidos ?? 0} convidado(s) removido(s).`);
       setRemoverTodos(false);
-      await carregar();
+      if (page === 0) await carregar();
+      else setPage(0);
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : "Erro ao limpar a lista");
     }
   }
 
-  const confirmados = convidados.filter((c) => c.statusRsvp === "CONFIRMED").length;
-
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-muted-foreground">
-          {convidados.length} convidado(s) · {confirmados} confirmado(s)
-        </p>
+        <p className="text-sm text-muted-foreground">{total} convidado(s)</p>
         <div className="flex gap-2">
-          {convidados.length > 0 && (
+          {total > 0 && (
             <Button
               variant="outline"
               onClick={() => setRemoverTodos(true)}
@@ -143,7 +152,7 @@ export function GestaoConvidados({
 
       {carregando ? (
         <p className="py-8 text-center text-muted-foreground">Carregando...</p>
-      ) : convidados.length === 0 ? (
+      ) : total === 0 ? (
         <ImportarConvidados token={token} eventoId={eventoId} onConcluir={carregar} vazio />
       ) : (
         <>
@@ -208,6 +217,7 @@ export function GestaoConvidados({
               </ul>
             </CardContent>
           </Card>
+          <Paginacao page={page} total={total} tam={TAM_PAGINA} onPage={setPage} />
           <ImportarConvidados token={token} eventoId={eventoId} onConcluir={carregar} />
         </>
       )}
@@ -321,7 +331,7 @@ export function GestaoConvidados({
           <div>
             <h3 className="font-serif text-2xl">Excluir todos os convidados</h3>
             <p className="mt-1 text-sm text-muted-foreground">
-              Isso apaga os <strong>{convidados.length}</strong> convidados e suas
+              Isso apaga os <strong>{total}</strong> convidados e suas
               reservas/presenças. Não dá para desfazer.
             </p>
           </div>

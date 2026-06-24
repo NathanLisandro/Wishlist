@@ -1,5 +1,7 @@
 package com.wishlist.nathan.presentation;
 
+import com.wishlist.nathan.application.dto.ArquivoUpload;
+import com.wishlist.nathan.application.dto.Pagina;
 import com.wishlist.nathan.application.dto.SessaoAdmin;
 import com.wishlist.nathan.application.usecase.AdicionarConvidado;
 import com.wishlist.nathan.application.usecase.AdicionarPresente;
@@ -18,9 +20,12 @@ import com.wishlist.nathan.application.usecase.ListarEventos;
 import com.wishlist.nathan.application.usecase.ListarPresentesAdmin;
 import com.wishlist.nathan.application.usecase.RemoverConvidado;
 import com.wishlist.nathan.application.usecase.RemoverPresente;
+import com.wishlist.nathan.application.usecase.PersonalizarTema;
 import com.wishlist.nathan.application.usecase.RemoverTodosConvidados;
 import com.wishlist.nathan.application.usecase.RemoverTodosPresentes;
 import com.wishlist.nathan.application.usecase.SalvarFotoEvento;
+import com.wishlist.nathan.application.usecase.SalvarFundoEvento;
+import com.wishlist.nathan.application.usecase.SalvarImagemPresente;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
@@ -57,11 +62,14 @@ public class EventoController {
     private final ConsultarEventoAdmin consultarEventoAdmin;
     private final AtualizarEvento atualizarEvento;
     private final SalvarFotoEvento salvarFotoEvento;
+    private final SalvarFundoEvento salvarFundoEvento;
+    private final PersonalizarTema personalizarTema;
     private final AdicionarPresente adicionarPresente;
     private final EditarPresente editarPresente;
     private final RemoverPresente removerPresente;
     private final RemoverTodosPresentes removerTodosPresentes;
     private final ListarPresentesAdmin listarPresentesAdmin;
+    private final SalvarImagemPresente salvarImagemPresente;
     private final AdicionarConvidado adicionarConvidado;
     private final EditarConvidado editarConvidado;
     private final RemoverConvidado removerConvidado;
@@ -76,9 +84,10 @@ public class EventoController {
 
     public EventoController(CriarEvento criarEvento, ConsultarEventoAdmin consultarEventoAdmin,
                            AtualizarEvento atualizarEvento, SalvarFotoEvento salvarFotoEvento,
+                           SalvarFundoEvento salvarFundoEvento, PersonalizarTema personalizarTema,
                            AdicionarPresente adicionarPresente, EditarPresente editarPresente,
                            RemoverPresente removerPresente, RemoverTodosPresentes removerTodosPresentes,
-                           ListarPresentesAdmin listarPresentesAdmin,
+                           ListarPresentesAdmin listarPresentesAdmin, SalvarImagemPresente salvarImagemPresente,
                            AdicionarConvidado adicionarConvidado, EditarConvidado editarConvidado,
                            RemoverConvidado removerConvidado, RemoverTodosConvidados removerTodosConvidados,
                            ListarConvidados listarConvidados, ImportarListaPresentes importarPresentes,
@@ -89,11 +98,14 @@ public class EventoController {
         this.consultarEventoAdmin = consultarEventoAdmin;
         this.atualizarEvento = atualizarEvento;
         this.salvarFotoEvento = salvarFotoEvento;
+        this.salvarFundoEvento = salvarFundoEvento;
+        this.personalizarTema = personalizarTema;
         this.adicionarPresente = adicionarPresente;
         this.editarPresente = editarPresente;
         this.removerPresente = removerPresente;
         this.removerTodosPresentes = removerTodosPresentes;
         this.listarPresentesAdmin = listarPresentesAdmin;
+        this.salvarImagemPresente = salvarImagemPresente;
         this.adicionarConvidado = adicionarConvidado;
         this.editarConvidado = editarConvidado;
         this.removerConvidado = removerConvidado;
@@ -176,12 +188,33 @@ public class EventoController {
         return Map.of("fotoUrl", url);
     }
 
+    // ---- Personalização visual (tema + fundo) ----
+
+    @PutMapping("/{eventoId}/theme")
+    public ResponseEntity<Void> personalizarTema(@AuthenticationPrincipal SessaoAdmin sessao,
+                                                 @PathVariable UUID eventoId,
+                                                 @RequestBody TemaRequest req) {
+        personalizarTema.executar(sessao.contaId(), eventoId,
+                new PersonalizarTema.Comando(req.paleta(), req.corDestaque(), req.overlay(), req.estiloAnimacao()));
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{eventoId}/background")
+    public Map<String, String> enviarFundo(@AuthenticationPrincipal SessaoAdmin sessao,
+                                           @PathVariable UUID eventoId,
+                                           @RequestParam("file") MultipartFile arquivo) {
+        String url = salvarFundoEvento.executar(sessao.contaId(), eventoId, arquivoUpload(arquivo));
+        return Map.of("fundoUrl", url);
+    }
+
     // ---- Presentes (gestão) ----
 
     @GetMapping("/{eventoId}/gifts")
-    public List<ListarPresentesAdmin.ItemAdmin> listarPresentes(@AuthenticationPrincipal SessaoAdmin sessao,
-                                                                @PathVariable UUID eventoId) {
-        return listarPresentesAdmin.executar(sessao.contaId(), eventoId);
+    public Pagina<ListarPresentesAdmin.ItemAdmin> listarPresentes(@AuthenticationPrincipal SessaoAdmin sessao,
+                                                                  @PathVariable UUID eventoId,
+                                                                  @RequestParam(defaultValue = "0") int page,
+                                                                  @RequestParam(defaultValue = "20") int size) {
+        return listarPresentesAdmin.executarPaginado(sessao.contaId(), eventoId, page, size);
     }
 
     @PostMapping("/{eventoId}/gifts")
@@ -216,12 +249,22 @@ public class EventoController {
         return Map.of("removidos", removidos);
     }
 
+    @PostMapping("/{eventoId}/gifts/{presenteId}/image")
+    public Map<String, String> enviarImagemPresente(@AuthenticationPrincipal SessaoAdmin sessao,
+                                                    @PathVariable UUID eventoId, @PathVariable UUID presenteId,
+                                                    @RequestParam("file") MultipartFile arquivo) {
+        String url = salvarImagemPresente.executar(sessao.contaId(), eventoId, presenteId, arquivoUpload(arquivo));
+        return Map.of("imagemUrl", url);
+    }
+
     // ---- Convidados ----
 
     @GetMapping("/{eventoId}/guests")
-    public List<ListarConvidados.ConvidadoPainel> listarConvidados(@AuthenticationPrincipal SessaoAdmin sessao,
-                                                                   @PathVariable UUID eventoId) {
-        return listarConvidados.executar(sessao.contaId(), eventoId);
+    public Pagina<ListarConvidados.ConvidadoPainel> listarConvidados(@AuthenticationPrincipal SessaoAdmin sessao,
+                                                                     @PathVariable UUID eventoId,
+                                                                     @RequestParam(defaultValue = "0") int page,
+                                                                     @RequestParam(defaultValue = "20") int size) {
+        return listarConvidados.executarPaginado(sessao.contaId(), eventoId, page, size);
     }
 
     @PostMapping("/{eventoId}/guests")
@@ -292,6 +335,10 @@ public class EventoController {
         }
     }
 
+    private static ArquivoUpload arquivoUpload(MultipartFile arquivo) {
+        return new ArquivoUpload(arquivo.getOriginalFilename(), arquivo.getContentType(), bytes(arquivo));
+    }
+
     private static ResponseEntity<byte[]> csv(String nome, String conteudo) {
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + nome + "\"")
@@ -307,6 +354,8 @@ public class EventoController {
                                          String local, String mensagemCasal, String mensagemFinal,
                                          String mensagemAgradecimento, boolean rsvpHabilitado,
                                          Instant prazoRsvp, boolean presenteDinheiroHabilitado) {}
+
+    public record TemaRequest(String paleta, String corDestaque, Integer overlay, String estiloAnimacao) {}
 
     public record PresenteRequest(@NotBlank String nome, String variante, @Positive int quantidade,
                                   String linkProduto, String imagemUrl) {}
