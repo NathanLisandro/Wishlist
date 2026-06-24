@@ -35,7 +35,9 @@ export class ApiError extends Error {
 
 /** Sessão inválida/expirada ou apontando para recurso que não existe mais (token velho). */
 export function ehSessaoInvalida(err: unknown): boolean {
-  return err instanceof ApiError && (err.status === 401 || err.status === 404);
+  // 401: token inválido. 403: token expirou e a requisição seguiu anônima numa rota
+  // protegida (Spring devolve 403, não 401). 404: token aponta p/ recurso que sumiu.
+  return err instanceof ApiError && (err.status === 401 || err.status === 403 || err.status === 404);
 }
 
 type Opcoes = {
