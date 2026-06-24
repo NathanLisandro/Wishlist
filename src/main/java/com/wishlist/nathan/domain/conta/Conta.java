@@ -17,26 +17,34 @@ public class Conta {
     private String nomeExibicao;
     private boolean emailVerificado;
     private StatusConta status;
+    private boolean onboardingConcluido;
     private final Instant criadoEm;
 
     public Conta(UUID id, Email email, String hashSenha, String nomeExibicao,
-                 boolean emailVerificado, StatusConta status, Instant criadoEm) {
+                 boolean emailVerificado, StatusConta status, boolean onboardingConcluido,
+                 Instant criadoEm) {
         this.id = id;
         this.email = exigir(email, "email");
         this.hashSenha = exigir(hashSenha, "hashSenha");
         this.nomeExibicao = exigir(nomeExibicao, "nomeExibicao");
         this.emailVerificado = emailVerificado;
         this.status = status == null ? StatusConta.ACTIVE : status;
+        this.onboardingConcluido = onboardingConcluido;
         this.criadoEm = criadoEm;
     }
 
-    /** Cria uma nova conta (ainda não persistida) em estado padrão. */
+    /** Cria uma nova conta (ainda não persistida) em estado padrão: onboarding pendente. */
     public static Conta nova(Email email, String hashSenha, String nomeExibicao) {
-        return new Conta(null, email, hashSenha, nomeExibicao, false, StatusConta.ACTIVE, null);
+        return new Conta(null, email, hashSenha, nomeExibicao, false, StatusConta.ACTIVE, false, null);
     }
 
     public void verificarEmail() {
         this.emailVerificado = true;
+    }
+
+    /** Marca o tour de boas-vindas como concluído — não volta a ser exibido. */
+    public void concluirOnboarding() {
+        this.onboardingConcluido = true;
     }
 
     public void suspender() {
@@ -60,5 +68,6 @@ public class Conta {
     public String getNomeExibicao() { return nomeExibicao; }
     public boolean isEmailVerificado() { return emailVerificado; }
     public StatusConta getStatus() { return status; }
+    public boolean isOnboardingConcluido() { return onboardingConcluido; }
     public Instant getCriadoEm() { return criadoEm; }
 }

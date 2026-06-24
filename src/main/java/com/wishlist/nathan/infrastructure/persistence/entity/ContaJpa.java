@@ -40,6 +40,9 @@ public class ContaJpa {
     @Column(nullable = false, columnDefinition = "account_status")
     private StatusConta status;
 
+    @Column(name = "onboarding_completed", nullable = false)
+    private boolean onboardingCompleted;
+
     @Column(name = "created_at", insertable = false, updatable = false)
     private Instant createdAt;
 }

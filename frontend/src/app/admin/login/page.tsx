@@ -6,6 +6,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { api, ApiError } from "@/lib/api";
 import { setAdmin } from "@/lib/auth";
+import { resetarOnboardingLocal } from "@/lib/onboarding";
 import type { LoginResponse } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,6 +26,7 @@ export default function LoginPage() {
     try {
       const r = await api.post<LoginResponse>("/auth/login", { email, senha });
       setAdmin(r.token, r.nomeExibicao);
+      resetarOnboardingLocal(); // cache é por navegador; nova sessão reavalia via /me
       router.push("/admin/eventos");
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : "Falha no login");

@@ -7,6 +7,15 @@ import { toast } from "sonner";
 import { CalendarDays, ExternalLink, ImageIcon, LogOut, Plus, Settings } from "lucide-react";
 import { api, ApiError, mediaUrl } from "@/lib/api";
 import { getAdminToken, getAdminNome, clearAdmin } from "@/lib/auth";
+import {
+  buscarMe,
+  concluirOnboarding,
+  marcarTourVisto,
+  onboardingConcluidoLocal,
+  tourVisto,
+} from "@/lib/onboarding";
+import { SpotlightTour } from "@/components/onboarding/SpotlightTour";
+import { PASSOS_DASHBOARD } from "@/components/onboarding/passos";
 import type { EventoResumo } from "@/lib/types";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,6 +45,7 @@ export default function EventosPage() {
   const [slug, setSlug] = useState("");
   const [categoriaId, setCategoriaId] = useState(1);
   const [salvando, setSalvando] = useState(false);
+  const [mostrarTour, setMostrarTour] = useState(false);
 
   const carregar = useCallback(
     async (t: string) => {
@@ -60,7 +70,24 @@ export default function EventosPage() {
     setToken(t);
     setNomeAdmin(getAdminNome());
     carregar(t);
+    // Tour de boas-vindas: apenas para contas novas, uma vez por navegador.
+    if (!onboardingConcluidoLocal() && !tourVisto("dashboard")) {
+      buscarMe(t).then((me) => {
+        if (me && !me.onboardingConcluido) setMostrarTour(true);
+      });
+    }
   }, [carregar, router]);
+
+  function concluirTour() {
+    marcarTourVisto("dashboard");
+    setMostrarTour(false);
+  }
+
+  function pularTour() {
+    marcarTourVisto("dashboard");
+    setMostrarTour(false);
+    if (token) concluirOnboarding(token); // optou por não ver a introdução
+  }
 
   function slugify(v: string) {
     return v
@@ -111,7 +138,7 @@ export default function EventosPage() {
 
       <h1 className="mt-8 font-serif text-4xl">Meus eventos</h1>
 
-      <Card className="mt-5 rounded-2xl border-border">
+      <Card className="mt-5 rounded-2xl border-border" data-tour="novo-evento">
         <CardContent className="p-5 sm:p-6">
           <div className="mb-4 flex items-center gap-2 text-sm font-medium">
             <span className="grid size-8 place-items-center rounded-lg bg-lilac text-plum">
@@ -120,7 +147,7 @@ export default function EventosPage() {
             Novo evento
           </div>
           <form onSubmit={criar} className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
+            <div className="space-y-2" data-tour="campo-nome">
               <Label htmlFor="nome">Nome</Label>
               <Input
                 id="nome"
@@ -134,7 +161,7 @@ export default function EventosPage() {
                 required
               />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2" data-tour="campo-slug">
               <Label htmlFor="slug">Link público (slug)</Label>
               <Input
                 id="slug"
@@ -145,7 +172,7 @@ export default function EventosPage() {
                 required
               />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2" data-tour="campo-categoria">
               <Label htmlFor="cat">Categoria</Label>
               <select
                 id="cat"
@@ -160,7 +187,7 @@ export default function EventosPage() {
                 ))}
               </select>
             </div>
-            <div className="flex items-end">
+            <div className="flex items-end" data-tour="btn-criar">
               <Button
                 type="submit"
                 className="brand-gradient h-11 w-full border-0 text-white hover:opacity-95"
@@ -173,7 +200,7 @@ export default function EventosPage() {
         </CardContent>
       </Card>
 
-      <div className="mt-5 space-y-3">
+      <div className="mt-5 space-y-3" data-tour="lista-eventos">
         {eventos.length === 0 && (
           <p className="rounded-2xl border border-dashed border-border bg-white/50 p-8 text-center text-sm text-muted-foreground">
             Nenhum evento ainda. Crie o primeiro acima ✨
@@ -237,6 +264,14 @@ export default function EventosPage() {
           );
         })}
       </div>
+
+      {mostrarTour && (
+        <SpotlightTour
+          steps={PASSOS_DASHBOARD}
+          onFinish={concluirTour}
+          onSkip={pularTour}
+        />
+      )}
     </main>
   );
 }

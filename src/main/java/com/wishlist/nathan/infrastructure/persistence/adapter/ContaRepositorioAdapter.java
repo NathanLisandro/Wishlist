@@ -28,6 +28,7 @@ public class ContaRepositorioAdapter implements ContaRepositorioPort {
         jpa.setDisplayName(conta.getNomeExibicao());
         jpa.setEmailVerified(conta.isEmailVerificado());
         jpa.setStatus(conta.getStatus());
+        jpa.setOnboardingCompleted(conta.isOnboardingConcluido());
         return paraDominio(repo.save(jpa));
     }
 
@@ -48,6 +49,7 @@ public class ContaRepositorioAdapter implements ContaRepositorioPort {
 
     private Conta paraDominio(ContaJpa j) {
         return new Conta(j.getId(), new Email(j.getEmail()), j.getPasswordHash(),
-                j.getDisplayName(), j.isEmailVerified(), j.getStatus(), j.getCreatedAt());
+                j.getDisplayName(), j.isEmailVerified(), j.getStatus(),
+                j.isOnboardingCompleted(), j.getCreatedAt());
     }
 }

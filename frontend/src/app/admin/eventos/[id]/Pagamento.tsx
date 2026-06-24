@@ -70,6 +70,38 @@ export function Pagamento({ token }: { token: string }) {
           </span>
           Mercado Pago {configurado ? "· configurado" : ""}
         </div>
+
+        {configurado !== true && (
+          <ol className="mb-5 space-y-2.5 rounded-xl border border-lilac-line bg-lilac/40 p-4 text-sm">
+            <li className="font-medium text-plum">Como cadastrar para receber em dinheiro</li>
+            <li className="flex gap-2.5">
+              <span className="grid size-5 flex-none place-items-center rounded-full bg-plum text-[11px] font-semibold text-white">1</span>
+              <span>
+                Acesse o <strong>Mercado Pago</strong> → <em>Suas integrações</em>, crie uma aplicação e
+                copie o <strong>Access Token</strong> e a <strong>Public Key</strong>. Use{" "}
+                <code className="rounded bg-white px-1 py-0.5 font-mono text-[11px]">APP_USR-…</code> para
+                receber de verdade ou{" "}
+                <code className="rounded bg-white px-1 py-0.5 font-mono text-[11px]">TEST-…</code> para testar.
+              </span>
+            </li>
+            <li className="flex gap-2.5">
+              <span className="grid size-5 flex-none place-items-center rounded-full bg-plum text-[11px] font-semibold text-white">2</span>
+              <span>Cole as duas credenciais nos campos abaixo e clique em <strong>Salvar</strong>.</span>
+            </li>
+            <li className="flex gap-2.5">
+              <span className="grid size-5 flex-none place-items-center rounded-full bg-plum text-[11px] font-semibold text-white">3</span>
+              <span>Informe seu <strong>domínio público</strong> e copie a <strong>URL do webhook</strong> gerada logo abaixo.</span>
+            </li>
+            <li className="flex gap-2.5">
+              <span className="grid size-5 flex-none place-items-center rounded-full bg-plum text-[11px] font-semibold text-white">4</span>
+              <span>
+                No Mercado Pago (<em>Webhooks</em>), cole essa URL, marque o evento <strong>Pagamentos</strong> e
+                cole a <strong>assinatura secreta</strong> no campo <strong>Webhook Secret</strong>.
+              </span>
+            </li>
+          </ol>
+        )}
+
         <form onSubmit={salvar} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="at">Access Token</Label>

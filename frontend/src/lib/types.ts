@@ -131,6 +131,13 @@ export type MoneyGiftResultado = {
 
 export type LoginResponse = { token: string; nomeExibicao: string };
 
+export type MeResponse = {
+  id: string;
+  email: string;
+  nomeExibicao: string;
+  onboardingConcluido: boolean;
+};
+
 export type ImportResultado = {
   importJobId: string;
   total: number;

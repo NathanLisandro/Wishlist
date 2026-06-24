@@ -1,12 +1,21 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
 import { ArrowLeft, ExternalLink, LinkIcon } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
 import { getAdminToken, clearAdmin } from "@/lib/auth";
+import {
+  buscarMe,
+  concluirOnboarding,
+  marcarTourVisto,
+  onboardingConcluidoLocal,
+  tourVisto,
+} from "@/lib/onboarding";
+import { SpotlightTour } from "@/components/onboarding/SpotlightTour";
+import { PASSOS_GERENCIAR } from "@/components/onboarding/passos";
 import type { EventoDetalhe } from "@/lib/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Brand } from "@/components/Brand";
@@ -23,6 +32,8 @@ export default function GerenciarEventoPage() {
   const eventoId = params.id;
   const [token, setToken] = useState<string | null>(null);
   const [detalhe, setDetalhe] = useState<EventoDetalhe | null>(null);
+  const [mostrarTour, setMostrarTour] = useState(false);
+  const tourChecado = useRef(false);
 
   const expirado = useCallback(() => {
     clearAdmin();
@@ -51,6 +62,22 @@ export default function GerenciarEventoPage() {
     carregar(t);
   }, [carregar, router]);
 
+  // Tour de gestão: dispara quando o evento carrega, só para contas novas.
+  useEffect(() => {
+    if (!detalhe || !token || tourChecado.current) return;
+    if (onboardingConcluidoLocal() || tourVisto("gerenciar")) return;
+    tourChecado.current = true;
+    buscarMe(token).then((me) => {
+      if (me && !me.onboardingConcluido) setMostrarTour(true);
+    });
+  }, [detalhe, token]);
+
+  function encerrarTour() {
+    marcarTourVisto("gerenciar");
+    setMostrarTour(false);
+    if (token) concluirOnboarding(token); // último passo do onboarding
+  }
+
   if (!token) return null;
 
   function copiarLink() {
@@ -78,6 +105,7 @@ export default function GerenciarEventoPage() {
               )}
               <button
                 onClick={copiarLink}
+                data-tour="copiar-link"
                 className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-[13px] font-medium text-muted-foreground transition-colors hover:border-lilac-line hover:bg-white hover:text-plum"
               >
                 <LinkIcon className="size-3.5" /> Copiar link
@@ -106,15 +134,18 @@ export default function GerenciarEventoPage() {
       </div>
 
       <Tabs defaultValue="visao" className="mt-6">
-        <TabsList className="flex w-full flex-wrap">
-          <TabsTrigger value="visao" className="cursor-pointer">Visão geral</TabsTrigger>
+        <TabsList
+          className="flex w-full overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          data-tour="abas"
+        >
+          <TabsTrigger value="visao" className="flex-none sm:flex-1 cursor-pointer">Visão geral</TabsTrigger>
           {detalhe?.podeGerenciarPresentes !== false && (
-            <TabsTrigger value="presentes" className="cursor-pointer">Presentes</TabsTrigger>
+            <TabsTrigger value="presentes" className="flex-none sm:flex-1 cursor-pointer" data-tour="aba-presentes">Presentes</TabsTrigger>
           )}
-          <TabsTrigger value="convidados" className="cursor-pointer">Convidados</TabsTrigger>
-          <TabsTrigger value="personalizar" className="cursor-pointer">Personalizar</TabsTrigger>
+          <TabsTrigger value="convidados" className="flex-none sm:flex-1 cursor-pointer" data-tour="aba-convidados">Convidados</TabsTrigger>
+          <TabsTrigger value="personalizar" className="flex-none sm:flex-1 cursor-pointer" data-tour="aba-personalizar">Personalizar</TabsTrigger>
           {detalhe?.dono && (
-            <TabsTrigger value="pagamento" className="cursor-pointer">Pagamento</TabsTrigger>
+            <TabsTrigger value="pagamento" className="flex-none sm:flex-1 cursor-pointer" data-tour="aba-pagamento">Pagamento</TabsTrigger>
           )}
         </TabsList>
 
@@ -147,6 +178,14 @@ export default function GerenciarEventoPage() {
           </TabsContent>
         )}
       </Tabs>
+
+      {mostrarTour && (
+        <SpotlightTour
+          steps={PASSOS_GERENCIAR}
+          onFinish={encerrarTour}
+          onSkip={encerrarTour}
+        />
+      )}
     </main>
   );
 }
