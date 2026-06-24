@@ -56,12 +56,19 @@ function nomesComEComercial(nome: string) {
   );
 }
 
+function umValor(v: string | string[] | undefined): string | undefined {
+  return Array.isArray(v) ? v[0] : v;
+}
+
 export default async function Page({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const { slug } = await params;
+  const sp = await searchParams;
   const evento = await carregar(slug);
 
   if (!evento) {
@@ -82,7 +89,17 @@ export default async function Page({
   const foto = mediaUrl(evento.fotoUrl);
   const fundo = mediaUrl(evento.fundoUrl);
   const quote = evento.mensagemCasal ?? evento.descricao;
-  const temaVars = varsDoTema(evento.paletaTema, evento.corDestaque);
+
+  // Modo preview (iframe do admin): aplica as escolhas ainda não salvas via query params.
+  const emPreview = umValor(sp.preview) === "1";
+  const paleta = emPreview ? (umValor(sp.paleta) ?? "ROSE") : evento.paletaTema;
+  const accent = emPreview ? (umValor(sp.accent) ?? null) : evento.corDestaque;
+  const animacao = emPreview ? (umValor(sp.anim) ?? "SUAVE") : evento.estiloAnimacao;
+  const overlayParam = umValor(sp.overlay);
+  const overlay = emPreview
+    ? (overlayParam != null ? Number(overlayParam) : OVERLAY_PADRAO)
+    : (evento.fundoOverlay ?? OVERLAY_PADRAO);
+  const temaVars = varsDoTema(paleta, accent);
 
   return (
     <>
@@ -90,14 +107,11 @@ export default async function Page({
         <div aria-hidden className="fixed inset-0 z-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={fundo} alt="" className="size-full object-cover" />
-          <div
-            className="absolute inset-0 bg-black"
-            style={{ opacity: (evento.fundoOverlay ?? OVERLAY_PADRAO) / 100 }}
-          />
+          <div className="absolute inset-0 bg-black" style={{ opacity: overlay / 100 }} />
         </div>
       )}
       <main
-        data-anim={evento.estiloAnimacao.toLowerCase()}
+        data-anim={animacao.toLowerCase()}
         style={temaVars}
         className="relative z-10 mx-auto w-full max-w-[600px] px-5 pb-16 sm:px-6"
       >

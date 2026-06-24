@@ -214,6 +214,13 @@ public class EventoController {
         return Map.of("fundoUrl", url);
     }
 
+    @DeleteMapping("/{eventoId}/background")
+    public ResponseEntity<Void> removerFundo(@AuthenticationPrincipal SessaoAdmin sessao,
+                                             @PathVariable UUID eventoId) {
+        salvarFundoEvento.remover(sessao.contaId(), eventoId);
+        return ResponseEntity.noContent().build();
+    }
+
     /** Liga/desliga o modo surpresa (só o dono). */
     @PutMapping("/{eventoId}/surprise")
     public ResponseEntity<Void> alternarSurpresa(@AuthenticationPrincipal SessaoAdmin sessao,

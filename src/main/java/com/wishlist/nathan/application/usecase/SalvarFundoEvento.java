@@ -43,4 +43,16 @@ public class SalvarFundoEvento {
         }
         return nova;
     }
+
+    /** Remove a imagem de fundo do evento (apaga o arquivo e zera o campo). */
+    @Transactional
+    public void remover(UUID contaId, UUID eventoId) {
+        Evento evento = acessoEvento.exigir(contaId, eventoId);
+        String anterior = evento.getFundoUrl();
+        evento.definirFundo(null);
+        eventos.salvar(evento);
+        if (anterior != null) {
+            armazenamento.apagar(anterior);
+        }
+    }
 }

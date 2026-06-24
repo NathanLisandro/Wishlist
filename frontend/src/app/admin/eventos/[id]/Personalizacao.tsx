@@ -1,8 +1,8 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Camera, ImageIcon, Save, ExternalLink, RefreshCw, Palette } from "lucide-react";
+import { Camera, ImageIcon, Save, ExternalLink, RefreshCw, Palette, Trash2 } from "lucide-react";
 import { api, ApiError, mediaUrl } from "@/lib/api";
 import { PALETAS_DISPONIVEIS, OVERLAY_PADRAO } from "@/lib/temas";
 import type { EventoDetalhe } from "@/lib/types";
@@ -58,6 +58,24 @@ export function Personalizacao({
 
   const [previewKey, setPreviewKey] = useState(0);
 
+  // Preview ao vivo: reflete as escolhas (ainda não salvas) via query params no iframe.
+  const previewSrc = useMemo(() => {
+    const p = new URLSearchParams({
+      preview: "1",
+      paleta,
+      anim: animacao,
+      overlay: String(overlay),
+    });
+    if (corDestaque) p.set("accent", corDestaque);
+    return `/e/${detalhe.slug}?${p.toString()}`;
+  }, [detalhe.slug, paleta, corDestaque, overlay, animacao]);
+
+  const [previewSrcDebounced, setPreviewSrcDebounced] = useState(previewSrc);
+  useEffect(() => {
+    const t = setTimeout(() => setPreviewSrcDebounced(previewSrc), 350);
+    return () => clearTimeout(t);
+  }, [previewSrc]);
+
   async function enviarFoto(e: React.ChangeEvent<HTMLInputElement>) {
     const arquivo = e.target.files?.[0];
     if (!arquivo) return;
@@ -103,6 +121,21 @@ export function Personalizacao({
     } finally {
       setEnviandoFundo(false);
       if (fundoRef.current) fundoRef.current.value = "";
+    }
+  }
+
+  async function removerFundo() {
+    setEnviandoFundo(true);
+    try {
+      await api.del(`/events/${eventoId}/background`, token);
+      setFundoUrl(null);
+      toast.success("Fundo removido.");
+      setPreviewKey((k) => k + 1);
+      onSaved();
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : "Falha ao remover o fundo");
+    } finally {
+      setEnviandoFundo(false);
     }
   }
 
@@ -322,16 +355,29 @@ export function Personalizacao({
                     className="hidden"
                     onChange={enviarFundo}
                   />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="h-10"
-                    onClick={() => fundoRef.current?.click()}
-                    disabled={enviandoFundo}
-                  >
-                    <ImageIcon className="size-4" />
-                    {enviandoFundo ? "Enviando..." : fundo ? "Trocar fundo" : "Enviar fundo"}
-                  </Button>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-10"
+                      onClick={() => fundoRef.current?.click()}
+                      disabled={enviandoFundo}
+                    >
+                      <ImageIcon className="size-4" />
+                      {enviandoFundo ? "Enviando..." : fundo ? "Trocar fundo" : "Enviar fundo"}
+                    </Button>
+                    {fundo && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="h-10 text-muted-foreground hover:border-rose hover:text-rose"
+                        onClick={removerFundo}
+                        disabled={enviandoFundo}
+                      >
+                        <Trash2 className="size-4" /> Remover
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -485,7 +531,7 @@ export function Personalizacao({
         <div className="overflow-hidden rounded-[26px] border-4 border-white bg-white shadow-[0_30px_60px_-34px_rgba(110,31,67,0.5)]">
           <iframe
             key={previewKey}
-            src={`/e/${detalhe.slug}`}
+            src={previewSrcDebounced}
             title="Pré-visualização da página"
             className="h-[640px] w-full"
           />
