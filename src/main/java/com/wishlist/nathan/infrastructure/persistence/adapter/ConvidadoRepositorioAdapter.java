@@ -1,9 +1,11 @@
 package com.wishlist.nathan.infrastructure.persistence.adapter;
 
+import com.wishlist.nathan.application.dto.FiltroRsvp;
 import com.wishlist.nathan.application.dto.Pagina;
 import com.wishlist.nathan.application.port.ConvidadoRepositorioPort;
 import com.wishlist.nathan.domain.comum.NomeCriptografado;
 import com.wishlist.nathan.domain.convidado.Convidado;
+import com.wishlist.nathan.domain.rsvp.StatusRsvp;
 import com.wishlist.nathan.infrastructure.persistence.entity.ConvidadoJpa;
 import com.wishlist.nathan.infrastructure.persistence.repository.ConvidadoJpaRepository;
 import org.springframework.data.domain.Page;
@@ -57,9 +59,15 @@ public class ConvidadoRepositorioAdapter implements ConvidadoRepositorioPort {
     }
 
     @Override
-    public Pagina<Convidado> listarPorEventoPaginado(UUID eventoId, int page, int size) {
-        Page<ConvidadoJpa> pagina = repo.findByEventId(eventoId,
-                PageRequest.of(page, size, Sort.by("createdAt")));
+    public Pagina<Convidado> listarPorEventoPaginado(UUID eventoId, FiltroRsvp filtro, int page, int size) {
+        PageRequest paginacao = PageRequest.of(page, size, Sort.by("createdAt"));
+        Page<ConvidadoJpa> pagina = switch (filtro == null ? FiltroRsvp.TODOS : filtro) {
+            case TODOS -> repo.findByEventId(eventoId, paginacao);
+            case CONFIRMADOS -> repo.buscarComRsvpEm(eventoId, List.of(StatusRsvp.CONFIRMED), paginacao);
+            case RECUSADOS -> repo.buscarComRsvpEm(eventoId,
+                    List.of(StatusRsvp.DECLINED, StatusRsvp.CANCELLED), paginacao);
+            case PENDENTES -> repo.buscarSemRsvp(eventoId, paginacao);
+        };
         return new Pagina<>(pagina.getContent().stream().map(this::paraDominio).toList(),
                 pagina.getTotalElements(), page, size);
     }

@@ -27,6 +27,9 @@ import java.util.Map;
 @Component
 public class LeitorPlanilha {
 
+    /** Teto de linhas por importação (limita uso de memória/CPU de arquivos abusivos). */
+    private static final int MAX_LINHAS = 10_000;
+
     public List<Map<String, String>> ler(byte[] conteudo, String nomeArquivo) {
         String nome = nomeArquivo == null ? "" : nomeArquivo.toLowerCase();
         if (nome.endsWith(".xlsx") || nome.endsWith(".xls")) {
@@ -46,6 +49,9 @@ public class LeitorPlanilha {
         try (Reader reader = new InputStreamReader(new ByteArrayInputStream(conteudo), StandardCharsets.UTF_8);
              CSVParser parser = CSVParser.parse(reader, formato)) {
             for (CSVRecord registro : parser) {
+                if (linhas.size() >= MAX_LINHAS) {
+                    throw new IllegalArgumentException("Arquivo excede o limite de " + MAX_LINHAS + " linhas.");
+                }
                 Map<String, String> linha = new LinkedHashMap<>();
                 registro.toMap().forEach((k, v) -> linha.put(normalizar(k), v == null ? "" : v.trim()));
                 linhas.add(linha);
@@ -70,6 +76,9 @@ public class LeitorPlanilha {
                 colunas.add(normalizar(fmt.formatCellValue(c)));
             }
             for (int i = sheet.getFirstRowNum() + 1; i <= sheet.getLastRowNum(); i++) {
+                if (linhas.size() >= MAX_LINHAS) {
+                    throw new IllegalArgumentException("Arquivo excede o limite de " + MAX_LINHAS + " linhas.");
+                }
                 Row row = sheet.getRow(i);
                 if (row == null) {
                     continue;

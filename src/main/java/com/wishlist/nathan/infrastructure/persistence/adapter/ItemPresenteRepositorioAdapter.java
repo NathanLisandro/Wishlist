@@ -65,11 +65,19 @@ public class ItemPresenteRepositorioAdapter implements ItemPresenteRepositorioPo
     }
 
     @Override
-    public Pagina<ItemPresente> listarDoEventoPaginado(UUID eventoId, int page, int size) {
-        Page<ItemPresenteJpa> pagina = repo.findByEventIdAndStatusNot(eventoId, StatusPresente.HIDDEN,
-                PageRequest.of(page, size, Sort.by("createdAt")));
+    public Pagina<ItemPresente> listarDoEventoPaginado(UUID eventoId, String busca, int page, int size) {
+        PageRequest paginacao = PageRequest.of(page, size, Sort.by("createdAt"));
+        Page<ItemPresenteJpa> pagina = (busca == null || busca.isBlank())
+                ? repo.findByEventIdAndStatusNot(eventoId, StatusPresente.HIDDEN, paginacao)
+                : repo.buscarPorEventoETexto(eventoId, StatusPresente.HIDDEN, padraoLike(busca), paginacao);
         return new Pagina<>(pagina.getContent().stream().map(this::paraDominio).toList(),
                 pagina.getTotalElements(), page, size);
+    }
+
+    /** Escapa curingas do LIKE e envolve em %...% (busca "contém"). */
+    private static String padraoLike(String busca) {
+        String escapado = busca.trim().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
+        return "%" + escapado + "%";
     }
 
     @Override

@@ -26,6 +26,10 @@ public class ArmazenamentoLocal implements ArmazenamentoPort {
     private static final Set<String> TIPOS_PERMITIDOS =
             Set.of("image/jpeg", "image/png", "image/webp", "image/gif");
 
+    /** Extensões permitidas no nome gravado (whitelist — nada de .phtml etc.). */
+    private static final Set<String> EXTENSOES_PERMITIDAS =
+            Set.of(".jpg", ".jpeg", ".png", ".webp", ".gif");
+
     private final Path raiz;
     private final String basePublica;
 
@@ -46,6 +50,10 @@ public class ArmazenamentoLocal implements ArmazenamentoPort {
         }
         if (conteudo == null || conteudo.length == 0) {
             throw new IllegalArgumentException("Arquivo vazio.");
+        }
+        // Content-Type é spoofável; confirmamos pelos magic bytes que é mesmo imagem.
+        if (!pareceImagem(conteudo)) {
+            throw new IllegalArgumentException("O arquivo enviado não é uma imagem válida.");
         }
         String extensao = extensaoDe(nomeOriginal, contentType);
         String arquivo = UUID.randomUUID() + extensao;
@@ -87,7 +95,7 @@ public class ArmazenamentoLocal implements ArmazenamentoPort {
             int ponto = nomeOriginal.lastIndexOf('.');
             if (ponto >= 0 && ponto < nomeOriginal.length() - 1) {
                 String ext = nomeOriginal.substring(ponto).toLowerCase();
-                if (ext.matches("\\.[a-z0-9]{2,5}")) {
+                if (EXTENSOES_PERMITIDAS.contains(ext)) {
                     return ext;
                 }
             }
@@ -98,5 +106,20 @@ public class ArmazenamentoLocal implements ArmazenamentoPort {
             case "image/gif" -> ".gif";
             default -> ".jpg";
         };
+    }
+
+    /** Confere os magic bytes do conteúdo (JPEG/PNG/GIF/WEBP). */
+    private static boolean pareceImagem(byte[] b) {
+        if (b.length < 12) return false;
+        // JPEG: FF D8 FF
+        if ((b[0] & 0xFF) == 0xFF && (b[1] & 0xFF) == 0xD8 && (b[2] & 0xFF) == 0xFF) return true;
+        // PNG: 89 50 4E 47 0D 0A 1A 0A
+        if ((b[0] & 0xFF) == 0x89 && b[1] == 'P' && b[2] == 'N' && b[3] == 'G') return true;
+        // GIF: "GIF8"
+        if (b[0] == 'G' && b[1] == 'I' && b[2] == 'F' && b[3] == '8') return true;
+        // WEBP: "RIFF" .... "WEBP"
+        if (b[0] == 'R' && b[1] == 'I' && b[2] == 'F' && b[3] == 'F'
+                && b[8] == 'W' && b[9] == 'E' && b[10] == 'B' && b[11] == 'P') return true;
+        return false;
     }
 }

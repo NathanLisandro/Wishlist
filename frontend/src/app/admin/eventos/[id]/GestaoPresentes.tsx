@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
-  Pencil, Plus, Trash2, Upload, Download, ExternalLink, Camera, TrendingUp,
+  Pencil, Plus, Trash2, Upload, Download, ExternalLink, Camera, TrendingUp, Search,
 } from "lucide-react";
 import { api, ApiError, API_BASE, mediaUrl } from "@/lib/api";
 import type { ItemAdmin, ImportResultado, Pagina } from "@/lib/types";
@@ -42,6 +42,8 @@ export function GestaoPresentes({
   const [itens, setItens] = useState<ItemAdmin[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(0);
+  const [busca, setBusca] = useState("");
+  const [buscaAplicada, setBuscaAplicada] = useState("");
   const [carregando, setCarregando] = useState(true);
   const [form, setForm] = useState<Form | null>(null);
   const [salvando, setSalvando] = useState(false);
@@ -52,8 +54,9 @@ export function GestaoPresentes({
 
   const carregar = useCallback(async () => {
     try {
+      const filtro = buscaAplicada ? `&busca=${encodeURIComponent(buscaAplicada)}` : "";
       const p = await api.get<Pagina<ItemAdmin>>(
-        `/events/${eventoId}/gifts?page=${page}&size=${TAM_PAGINA}`,
+        `/events/${eventoId}/gifts?page=${page}&size=${TAM_PAGINA}${filtro}`,
         token,
       );
       setItens(p.itens);
@@ -64,11 +67,20 @@ export function GestaoPresentes({
     } finally {
       setCarregando(false);
     }
-  }, [eventoId, token, onExpirado, page]);
+  }, [eventoId, token, onExpirado, page, buscaAplicada]);
 
   useEffect(() => {
     carregar();
   }, [carregar]);
+
+  // Debounce da pesquisa: aplica 350ms depois da última tecla e volta à página 0.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setBuscaAplicada(busca.trim());
+      setPage(0);
+    }, 350);
+    return () => clearTimeout(t);
+  }, [busca]);
 
   async function salvar(e: React.FormEvent) {
     e.preventDefault();
@@ -155,10 +167,10 @@ export function GestaoPresentes({
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">
-          {total} presente(s) na lista.
+          {buscaAplicada ? `${total} resultado(s) para a pesquisa` : `${total} presente(s) na lista.`}
         </p>
         <div className="flex gap-2">
-          {total > 0 && (
+          {total > 0 && !buscaAplicada && (
             <Button
               variant="outline"
               onClick={() => setRemoverTodos(true)}
@@ -177,10 +189,27 @@ export function GestaoPresentes({
         </div>
       </div>
 
+      {(total > 0 || busca !== "") && (
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            placeholder="Pesquisar por nome ou variante..."
+            aria-label="Pesquisar presentes"
+            className="h-11 bg-white pl-9"
+          />
+        </div>
+      )}
+
       {dono && <TicketMedio token={token} eventoId={eventoId} reloadKey={total} />}
 
       {carregando ? (
         <p className="py-8 text-center text-muted-foreground">Carregando...</p>
+      ) : total === 0 && buscaAplicada ? (
+        <p className="py-8 text-center text-muted-foreground">
+          Nenhum presente encontrado para &ldquo;{buscaAplicada}&rdquo;.
+        </p>
       ) : total === 0 ? (
         <ImportarPresentes token={token} eventoId={eventoId} onConcluir={carregar} vazio />
       ) : (
@@ -263,7 +292,9 @@ export function GestaoPresentes({
             })}
           </div>
           <Paginacao page={page} total={total} tam={TAM_PAGINA} onPage={setPage} />
-          <ImportarPresentes token={token} eventoId={eventoId} onConcluir={carregar} />
+          {!buscaAplicada && (
+            <ImportarPresentes token={token} eventoId={eventoId} onConcluir={carregar} />
+          )}
         </>
       )}
 

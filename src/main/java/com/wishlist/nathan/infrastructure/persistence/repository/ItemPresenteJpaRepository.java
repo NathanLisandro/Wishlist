@@ -22,6 +22,18 @@ public interface ItemPresenteJpaRepository extends JpaRepository<ItemPresenteJpa
 
     Page<ItemPresenteJpa> findByEventIdAndStatusNot(UUID eventId, StatusPresente status, Pageable pageable);
 
+    /** Busca do painel por nome/variante (case-insensitive; :busca já vem com % e escapado). */
+    @Query("""
+            select i from ItemPresenteJpa i
+            where i.eventId = :eventId and i.status <> :status
+              and (lower(i.name) like lower(:busca) escape '\\'
+                   or lower(i.variant) like lower(:busca) escape '\\')
+            """)
+    Page<ItemPresenteJpa> buscarPorEventoETexto(@Param("eventId") UUID eventId,
+                                                @Param("status") StatusPresente status,
+                                                @Param("busca") String busca,
+                                                Pageable pageable);
+
     long deleteByEventId(UUID eventId);
 
     /** Lock pessimista (SELECT ... FOR UPDATE) para a reserva sem oversell. */

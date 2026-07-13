@@ -36,9 +36,9 @@ public class ListarPresentesAdmin {
     }
 
     @Transactional(readOnly = true)
-    public Pagina<ItemAdmin> executarPaginado(UUID contaId, UUID eventoId, int page, int size) {
+    public Pagina<ItemAdmin> executarPaginado(UUID contaId, UUID eventoId, String busca, int page, int size) {
         Evento evento = acessoEvento.exigirGestaoPresentes(contaId, eventoId);
-        return itens.listarDoEventoPaginado(evento.getId(), page, size).mapear(this::montar);
+        return itens.listarDoEventoPaginado(evento.getId(), busca, page, size).mapear(this::montar);
     }
 
     private ItemAdmin montar(ItemPresente item) {

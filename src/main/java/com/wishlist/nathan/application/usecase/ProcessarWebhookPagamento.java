@@ -57,11 +57,17 @@ public class ProcessarWebhookPagamento {
             return;
         }
 
-        // 2) Validação de assinatura (com stub em teste retorna true).
+        // 2) Validação de assinatura. Sem webhook secret não há como verificar a
+        // origem da notificação — não confirmamos pagamento às cegas (poderia ser
+        // forjada). Registramos o evento e saímos; o dono precisa configurar o secret.
         String webhookSecret = config.getWebhookSecret() != null
                 ? cripto.descriptografar(config.getWebhookSecret().conteudo()) : null;
-        if (webhookSecret != null && !gateway.validarAssinatura(
-                webhookSecret, cmd.xSignature(), cmd.xRequestId(), cmd.dataId())) {
+        if (webhookSecret == null) {
+            log.warn("Webhook da conta {} sem webhook secret — assinatura não verificável; ignorando", cmd.contaId());
+            webhookEvents.registrar(cmd.mpEventId(), null, cmd.payloadBruto());
+            return;
+        }
+        if (!gateway.validarAssinatura(webhookSecret, cmd.xSignature(), cmd.xRequestId(), cmd.dataId())) {
             throw new CredenciaisInvalidasException("Assinatura do webhook inválida");
         }
 

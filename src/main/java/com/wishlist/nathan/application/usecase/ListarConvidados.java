@@ -1,5 +1,6 @@
 package com.wishlist.nathan.application.usecase;
 
+import com.wishlist.nathan.application.dto.FiltroRsvp;
 import com.wishlist.nathan.application.dto.Pagina;
 import com.wishlist.nathan.application.port.ConvidadoRepositorioPort;
 import com.wishlist.nathan.application.port.CriptografiaPort;
@@ -42,9 +43,10 @@ public class ListarConvidados {
     }
 
     @Transactional(readOnly = true)
-    public Pagina<ConvidadoPainel> executarPaginado(UUID contaId, UUID eventoId, int page, int size) {
+    public Pagina<ConvidadoPainel> executarPaginado(UUID contaId, UUID eventoId, FiltroRsvp filtro,
+                                                    int page, int size) {
         Evento evento = acessoEvento.exigir(contaId, eventoId);
-        return convidados.listarPorEventoPaginado(evento.getId(), page, size)
+        return convidados.listarPorEventoPaginado(evento.getId(), filtro, page, size)
                 .mapear(c -> montar(evento.getId(), c));
     }
 

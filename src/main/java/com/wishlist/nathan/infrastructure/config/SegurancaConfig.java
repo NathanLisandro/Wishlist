@@ -4,6 +4,7 @@ import com.wishlist.nathan.infrastructure.security.FiltroAutenticacaoJwt;
 import com.wishlist.nathan.infrastructure.security.FiltroRateLimit;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -26,9 +27,11 @@ import java.util.List;
 public class SegurancaConfig {
 
     private final AppProperties props;
+    private final Environment env;
 
-    public SegurancaConfig(AppProperties props) {
+    public SegurancaConfig(AppProperties props, Environment env) {
         this.props = props;
+        this.env = env;
     }
 
     @Bean
@@ -62,7 +65,12 @@ public class SegurancaConfig {
                 .headers(headers -> headers
                         // 'self' para conteúdo; img-src libera as fotos servidas e data: (placeholders).
                         .contentSecurityPolicy(csp -> csp.policyDirectives(
-                                "default-src 'self'; img-src 'self' data: blob:")));
+                                "default-src 'self'; img-src 'self' data: blob:"))
+                        // API não deve ser embutida em frames de terceiros (anti-clickjacking).
+                        .frameOptions(frame -> frame.sameOrigin())
+                        // HSTS: força HTTPS no browser (efetivo só sob TLS, ignorado em http local).
+                        .httpStrictTransportSecurity(hsts -> hsts
+                                .includeSubDomains(true).maxAgeInSeconds(31536000)));
         return http.build();
     }
 
@@ -76,10 +84,14 @@ public class SegurancaConfig {
         List<String> padroes = new java.util.ArrayList<>(Arrays.stream(props.cors().allowedOrigins().split(","))
                 .map(String::trim).filter(s -> !s.isBlank()).toList());
         // Túneis de teste no celular (ngrok) — o subdomínio muda a cada sessão, então
-        // liberamos por padrão de origem (allowedOriginPatterns aceita curinga com credenciais).
-        padroes.addAll(List.of(
-                "https://*.ngrok-free.app", "https://*.ngrok.app", "https://*.ngrok.io",
-                "https://*.ngrok-free.dev"));
+        // liberamos por padrão de origem. Apenas fora de produção: em prod o ngrok não
+        // deve ser uma origem confiável (CORS permissivo demais).
+        boolean prod = Arrays.asList(env.getActiveProfiles()).contains("prod");
+        if (!prod) {
+            padroes.addAll(List.of(
+                    "https://*.ngrok-free.app", "https://*.ngrok.app", "https://*.ngrok.io",
+                    "https://*.ngrok-free.dev"));
+        }
         config.setAllowedOriginPatterns(padroes);
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));

@@ -86,3 +86,9 @@ CORS_ALLOWED_ORIGINS=
 ## Fluxo de trabalho
 
 Antes de implementar uma feature grande: **planeje primeiro** (plan mode), confirme contra o `docs/SDD.md`, e só então gere o código. Trabalhe feature por feature para manter o contexto enxuto.
+
+
+## SEMPRE SIGA O SOLID! METODOS SEPARADOS COM NOMES RELEVANTES E QUE REALMENTE DESCREVE O QUE O METODO FAZ. NÃO CRIE COMPLEXIDADE CICLOMATICA E DEIXE O CÓDIGO MANUTENIVEL.
+
+## TESTES UNITARIOS SÃO EXTREMAMENTES NECESSARIOS
+## TESTES END TO END TAMBÉM SÃO NECESSARIOS!

@@ -55,6 +55,9 @@ public class FiltroRateLimit extends OncePerRequestFilter {
         }
         String uri = request.getRequestURI();
         return uri.equals("/auth/login")
+                || uri.equals("/auth/register")
+                || uri.equals("/auth/forgot-password")
+                || uri.equals("/auth/reset-password")
                 || (uri.startsWith("/public/events/") && uri.endsWith("/guest-session"));
     }
 

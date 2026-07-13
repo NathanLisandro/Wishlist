@@ -25,8 +25,11 @@ public interface ItemPresenteRepositorioPort {
     /** Todos os itens do evento exceto os ocultados/removidos (HIDDEN) — gestão do admin. */
     List<ItemPresente> listarDoEvento(UUID eventoId);
 
-    /** Página de itens do evento (exceto HIDDEN), ordenados por criação — painel do admin. */
-    Pagina<ItemPresente> listarDoEventoPaginado(UUID eventoId, int page, int size);
+    /**
+     * Página de itens do evento (exceto HIDDEN), ordenados por criação — painel do admin.
+     * {@code busca} (opcional) filtra por nome/variante, sem diferenciar maiúsculas.
+     */
+    Pagina<ItemPresente> listarDoEventoPaginado(UUID eventoId, String busca, int page, int size);
 
     /** Remove fisicamente um item (usado quando não há reservas). */
     void apagar(UUID id);

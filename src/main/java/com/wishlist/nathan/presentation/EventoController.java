@@ -1,6 +1,7 @@
 package com.wishlist.nathan.presentation;
 
 import com.wishlist.nathan.application.dto.ArquivoUpload;
+import com.wishlist.nathan.application.dto.FiltroRsvp;
 import com.wishlist.nathan.application.dto.Pagina;
 import com.wishlist.nathan.application.dto.SessaoAdmin;
 import com.wishlist.nathan.application.usecase.AdicionarConvidado;
@@ -235,9 +236,10 @@ public class EventoController {
     @GetMapping("/{eventoId}/gifts")
     public Pagina<ListarPresentesAdmin.ItemAdmin> listarPresentes(@AuthenticationPrincipal SessaoAdmin sessao,
                                                                   @PathVariable UUID eventoId,
+                                                                  @RequestParam(required = false) String busca,
                                                                   @RequestParam(defaultValue = "0") int page,
                                                                   @RequestParam(defaultValue = "20") int size) {
-        return listarPresentesAdmin.executarPaginado(sessao.contaId(), eventoId, page, size);
+        return listarPresentesAdmin.executarPaginado(sessao.contaId(), eventoId, busca, page, size);
     }
 
     @PostMapping("/{eventoId}/gifts")
@@ -292,9 +294,21 @@ public class EventoController {
     @GetMapping("/{eventoId}/guests")
     public Pagina<ListarConvidados.ConvidadoPainel> listarConvidados(@AuthenticationPrincipal SessaoAdmin sessao,
                                                                      @PathVariable UUID eventoId,
+                                                                     @RequestParam(required = false) String rsvp,
                                                                      @RequestParam(defaultValue = "0") int page,
                                                                      @RequestParam(defaultValue = "20") int size) {
-        return listarConvidados.executarPaginado(sessao.contaId(), eventoId, page, size);
+        return listarConvidados.executarPaginado(sessao.contaId(), eventoId, filtroRsvpDe(rsvp), page, size);
+    }
+
+    /** Mapeia o param público (mesmos valores do statusRsvp exibido) para o filtro interno. */
+    private static FiltroRsvp filtroRsvpDe(String rsvp) {
+        if (rsvp == null || rsvp.isBlank()) return FiltroRsvp.TODOS;
+        return switch (rsvp.trim().toUpperCase()) {
+            case "CONFIRMED" -> FiltroRsvp.CONFIRMADOS;
+            case "PENDING" -> FiltroRsvp.PENDENTES;
+            case "DECLINED" -> FiltroRsvp.RECUSADOS;
+            default -> FiltroRsvp.TODOS;
+        };
     }
 
     @PostMapping("/{eventoId}/guests")

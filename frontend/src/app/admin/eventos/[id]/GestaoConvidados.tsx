@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
-  UserPlus, Upload, Download, Check, X, Clock, Users, Pencil, Trash2, Phone,
+  UserPlus, Upload, Download, Check, X, Clock, Users, Pencil, Trash2, Phone, Copy,
 } from "lucide-react";
 import { api, ApiError, API_BASE } from "@/lib/api";
 import { formatarTelefoneBR, apenasDigitos, exibirTelefone } from "@/lib/format";
@@ -26,6 +26,18 @@ const STATUS: Record<string, { label: string; classe: string; Icon: typeof Check
 
 type Form = { id?: string; nome: string; telefone: string; acompanhantes: number };
 
+/** Mesmos valores do statusRsvp exibido; "" = todos. */
+type FiltroRsvp = "" | "CONFIRMED" | "PENDING" | "DECLINED";
+type GrupoCopia = "CONFIRMED" | "PENDING";
+type FormatoCopia = "nome" | "telefone" | "check";
+
+const FILTROS: { valor: FiltroRsvp; label: string }[] = [
+  { valor: "", label: "Todos" },
+  { valor: "CONFIRMED", label: "Confirmados" },
+  { valor: "PENDING", label: "Pendentes" },
+  { valor: "DECLINED", label: "Não vão" },
+];
+
 /** Converte o E.164 vindo da API no formato editável "(67) 99843-7332". */
 function paraEdicao(e164: string): string {
   const nacional = e164.replace(/\D/g, "").replace(/^55/, "");
@@ -44,16 +56,19 @@ export function GestaoConvidados({
   const [convidados, setConvidados] = useState<ConvidadoPainel[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(0);
+  const [filtro, setFiltro] = useState<FiltroRsvp>("");
   const [carregando, setCarregando] = useState(true);
   const [form, setForm] = useState<Form | null>(null);
   const [salvando, setSalvando] = useState(false);
   const [remover, setRemover] = useState<ConvidadoPainel | null>(null);
   const [removerTodos, setRemoverTodos] = useState(false);
+  const [copiar, setCopiar] = useState<GrupoCopia | null>(null);
 
   const carregar = useCallback(async () => {
     try {
+      const rsvp = filtro ? `&rsvp=${filtro}` : "";
       const p = await api.get<Pagina<ConvidadoPainel>>(
-        `/events/${eventoId}/guests?page=${page}&size=${TAM_PAGINA}`,
+        `/events/${eventoId}/guests?page=${page}&size=${TAM_PAGINA}${rsvp}`,
         token,
       );
       setConvidados(p.itens);
@@ -64,7 +79,7 @@ export function GestaoConvidados({
     } finally {
       setCarregando(false);
     }
-  }, [eventoId, token, onExpirado, page]);
+  }, [eventoId, token, onExpirado, page, filtro]);
 
   useEffect(() => {
     carregar();
@@ -130,15 +145,26 @@ export function GestaoConvidados({
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-muted-foreground">{total} convidado(s)</p>
-        <div className="flex gap-2">
-          {total > 0 && (
+        <p className="text-sm text-muted-foreground">
+          {filtro ? `${total} no filtro` : `${total} convidado(s)`}
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {total > 0 && !filtro && (
             <Button
               variant="outline"
               onClick={() => setRemoverTodos(true)}
               className="h-10 text-muted-foreground hover:border-rose hover:text-rose"
             >
               <Trash2 className="size-4" /> Excluir todos
+            </Button>
+          )}
+          {(total > 0 || filtro !== "") && (
+            <Button
+              variant="outline"
+              onClick={() => setCopiar(filtro === "PENDING" ? "PENDING" : "CONFIRMED")}
+              className="h-10"
+            >
+              <Copy className="size-4" /> Copiar lista
             </Button>
           )}
           <Button
@@ -150,8 +176,34 @@ export function GestaoConvidados({
         </div>
       </div>
 
+      {(total > 0 || filtro !== "") && (
+        <div className="flex flex-wrap gap-1.5">
+          {FILTROS.map((f) => (
+            <button
+              key={f.valor}
+              type="button"
+              onClick={() => {
+                setFiltro(f.valor);
+                setPage(0);
+              }}
+              className={`cursor-pointer rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors ${
+                filtro === f.valor
+                  ? "brand-gradient text-white"
+                  : "border border-border bg-white text-muted-foreground hover:border-plum/40 hover:text-plum"
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+      )}
+
       {carregando ? (
         <p className="py-8 text-center text-muted-foreground">Carregando...</p>
+      ) : total === 0 && filtro ? (
+        <p className="py-8 text-center text-muted-foreground">
+          Nenhum convidado {FILTROS.find((f) => f.valor === filtro)?.label.toLowerCase()} ainda.
+        </p>
       ) : total === 0 ? (
         <ImportarConvidados token={token} eventoId={eventoId} onConcluir={carregar} vazio />
       ) : (
@@ -182,9 +234,12 @@ export function GestaoConvidados({
                         </p>
                       </div>
                       <span
-                        className={`hidden flex-none items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium sm:flex ${s.classe}`}
+                        aria-label={s.label}
+                        title={s.label}
+                        className={`flex flex-none items-center gap-1 rounded-full p-1.5 text-xs font-medium sm:px-2.5 sm:py-1 ${s.classe}`}
                       >
-                        <s.Icon className="size-3" /> {s.label}
+                        <s.Icon className="size-3.5 sm:size-3" />
+                        <span className="hidden sm:inline">{s.label}</span>
                       </span>
                       <div className="flex flex-none gap-1">
                         <button
@@ -218,9 +273,17 @@ export function GestaoConvidados({
             </CardContent>
           </Card>
           <Paginacao page={page} total={total} tam={TAM_PAGINA} onPage={setPage} />
-          <ImportarConvidados token={token} eventoId={eventoId} onConcluir={carregar} />
+          {!filtro && <ImportarConvidados token={token} eventoId={eventoId} onConcluir={carregar} />}
         </>
       )}
+
+      <CopiarLista
+        token={token}
+        eventoId={eventoId}
+        grupo={copiar}
+        onGrupo={setCopiar}
+        onFechar={() => setCopiar(null)}
+      />
 
       {/* Modal adicionar/editar */}
       <Modal open={!!form} onClose={() => !salvando && setForm(null)}>
@@ -349,6 +412,168 @@ export function GestaoConvidados({
         </div>
       </Modal>
     </div>
+  );
+}
+
+const FORMATOS: { valor: FormatoCopia; label: string; exemplo: (grupo: GrupoCopia) => string }[] = [
+  { valor: "nome", label: "Só nome", exemplo: () => "Maria Silva" },
+  { valor: "telefone", label: "Nome - telefone", exemplo: () => "Maria Silva - (67) 99999-9999" },
+  {
+    valor: "check",
+    label: "Nome com marcação",
+    exemplo: (g) => (g === "CONFIRMED" ? "Maria Silva [X]" : "Maria Silva []"),
+  },
+];
+
+/**
+ * Modal "Copiar lista": monta os confirmados ou pendentes (um por linha) no
+ * formato escolhido, pronto para colar no WhatsApp.
+ */
+function CopiarLista({
+  token,
+  eventoId,
+  grupo,
+  onGrupo,
+  onFechar,
+}: {
+  token: string;
+  eventoId: string;
+  grupo: GrupoCopia | null;
+  onGrupo: (g: GrupoCopia) => void;
+  onFechar: () => void;
+}) {
+  const [formato, setFormato] = useState<FormatoCopia>("nome");
+  // Resultado amarrado ao grupo buscado: enquanto o grupo atual não bate, é "carregando".
+  const [resultado, setResultado] = useState<{ grupo: GrupoCopia; itens: ConvidadoPainel[] } | null>(
+    null,
+  );
+  const areaRef = useRef<HTMLTextAreaElement>(null);
+  const lista = grupo && resultado?.grupo === grupo ? resultado.itens : null;
+
+  useEffect(() => {
+    if (!grupo) return;
+    let ativo = true;
+    api
+      .get<Pagina<ConvidadoPainel>>(
+        `/events/${eventoId}/guests?rsvp=${grupo}&page=0&size=2000`,
+        token,
+      )
+      .then((p) => {
+        if (ativo) setResultado({ grupo, itens: p.itens });
+      })
+      .catch(() => {
+        if (!ativo) return;
+        setResultado({ grupo, itens: [] });
+        toast.error("Erro ao carregar a lista para copiar");
+      });
+    return () => {
+      ativo = false;
+    };
+  }, [grupo, eventoId, token]);
+
+  const texto = useMemo(() => {
+    if (!grupo || !lista) return "";
+    return lista
+      .map((c) => {
+        if (formato === "telefone") return `${c.nome} - ${exibirTelefone(c.telefone)}`;
+        if (formato === "check") return `${c.nome} ${grupo === "CONFIRMED" ? "[X]" : "[]"}`;
+        return c.nome;
+      })
+      .join("\n");
+  }, [grupo, lista, formato]);
+
+  async function copiarTexto() {
+    if (!texto) return;
+    try {
+      await navigator.clipboard.writeText(texto);
+      toast.success("Lista copiada!");
+    } catch {
+      // Sem permissão/HTTP: seleciona o texto para a pessoa copiar com Ctrl+C.
+      areaRef.current?.select();
+      toast.error("Não consegui copiar automaticamente — o texto ficou selecionado, use Ctrl+C.");
+    }
+  }
+
+  return (
+    <Modal open={!!grupo} onClose={onFechar}>
+      {grupo && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <span className="grid size-11 place-items-center rounded-[14px] bg-lilac text-plum">
+              <Copy className="size-5" />
+            </span>
+            <h3 className="font-serif text-2xl">Copiar lista</h3>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Quem entra na lista</Label>
+            <div className="grid grid-cols-2 gap-2">
+              {(
+                [
+                  { valor: "CONFIRMED", label: "Confirmados" },
+                  { valor: "PENDING", label: "Pendentes" },
+                ] as const
+              ).map((g) => (
+                <button
+                  key={g.valor}
+                  type="button"
+                  onClick={() => onGrupo(g.valor)}
+                  className={`cursor-pointer rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
+                    grupo === g.valor
+                      ? "border-plum bg-lilac text-plum"
+                      : "border-border text-muted-foreground hover:border-plum/40 hover:text-plum"
+                  }`}
+                >
+                  {g.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Formato de cada linha</Label>
+            <div className="grid gap-2">
+              {FORMATOS.map((f) => (
+                <button
+                  key={f.valor}
+                  type="button"
+                  onClick={() => setFormato(f.valor)}
+                  className={`flex cursor-pointer items-center justify-between gap-2 rounded-lg border px-3 py-2 text-left transition-colors ${
+                    formato === f.valor
+                      ? "border-plum bg-lilac text-plum"
+                      : "border-border text-muted-foreground hover:border-plum/40 hover:text-plum"
+                  }`}
+                >
+                  <span className="text-sm font-medium">{f.label}</span>
+                  <span className="truncate text-xs opacity-70">{f.exemplo(grupo)}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <textarea
+            ref={areaRef}
+            readOnly
+            value={lista === null ? "Carregando..." : texto || "Ninguém nesse grupo ainda."}
+            className="h-36 w-full resize-none rounded-lg border border-input bg-white p-3 text-sm outline-none focus:border-ring"
+            aria-label="Prévia da lista"
+          />
+
+          <div className="flex gap-2">
+            <Button variant="outline" className="h-11 flex-1" onClick={onFechar}>
+              Fechar
+            </Button>
+            <Button
+              className="brand-gradient h-11 flex-1 border-0 text-white hover:opacity-95"
+              onClick={copiarTexto}
+              disabled={!texto}
+            >
+              <Copy className="size-4" /> Copiar
+            </Button>
+          </div>
+        </div>
+      )}
+    </Modal>
   );
 }
 
