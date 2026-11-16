@@ -1,5 +1,7 @@
 # Wishlist: lista de presentes com importação por IA
 
+[![CI](https://github.com/NathanLisandro/Wishlist/actions/workflows/ci.yml/badge.svg)](https://github.com/NathanLisandro/Wishlist/actions/workflows/ci.yml)
+
 SaaS multi-tenant em que casais criam um evento (casamento, chá de panela, casa nova), publicam a lista de presentes por link, e os convidados confirmam presença, escolhem um presente ou presenteiam com dinheiro via Mercado Pago, sem precisar criar conta.
 
 **Stack:** Java 25 · Spring Boot 4 · PostgreSQL · Flyway · Next.js 16 · React 19 · TypeScript · API da Anthropic (SDK Java) · Mercado Pago · Docker · Testcontainers
