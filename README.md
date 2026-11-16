@@ -11,7 +11,6 @@ O casal envia a lista do jeito que ela já existe: foto ou print, PDF, texto col
 - **Entrada multimodal:** imagem e PDF vão direto para o modelo (visão e PDF nativos da API), sem OCR intermediário. Links passam por um buscador HTML antes da extração.
 - **Saída estruturada:** os itens voltam num schema tipado (nome, variante, quantidade, link), derivado do record Java pelo SDK. Não há parsing de texto livre.
 - **Estimativa de preço:** um segundo adapter estima o preço de cada item, usado para ordenar e sugerir valores.
-- **Prompt caching:** o system prompt é marcado com `cache_control`, reduzindo custo e latência em importações seguidas.
 - **IA atrás de um port:** `ExtratorListaIaPort` e `EstimadorPrecoIaPort` isolam o fornecedor. A feature liga e desliga por configuração (`AI_ENABLED`), e o modelo é definido por `ANTHROPIC_MODEL`.
 
 Código: [`infrastructure/ai`](src/main/java/com/wishlist/nathan/infrastructure/ai) e [`application/usecase/ExtrairListaPresentesIa.java`](src/main/java/com/wishlist/nathan/application/usecase/ExtrairListaPresentesIa.java).
